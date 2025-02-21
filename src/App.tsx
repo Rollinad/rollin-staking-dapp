@@ -22,7 +22,7 @@ export const App = () => {
             <Routes>
               <Route path="/" element={<PoolsList />} />
               <Route path="/create-pool" element={<CreatePool />} />
-              <Route path="/create-option" element={<CreateStakingOption poolAddress="0x..." />} />
+              <Route path="/create-option" element={<CreateStakingOption />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Box>
