@@ -88,23 +88,92 @@ export const CreateStakingOption = () => {
     }
   }
 
+  const commonInputStyles = {
+    '& .MuiOutlinedInput-root': {
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      '& fieldset': {
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+      },
+      '&:hover fieldset': {
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#9C27B0',
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: 'rgba(255, 255, 255, 0.7)',
+      '&.Mui-focused': {
+        color: '#9C27B0',
+      },
+    },
+    '& .MuiInputBase-input': {
+      color: '#ffffff',
+    },
+    '& .MuiFormHelperText-root': {
+      color: 'rgba(255, 255, 255, 0.5)',
+    },
+  };
+
+  const selectStyles = {
+    ...commonInputStyles,
+    '& .MuiSelect-icon': {
+      color: 'rgba(255, 255, 255, 0.7)',
+    },
+  };
+
   return (
-    <Card>
+    <Card sx={{
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(10px)',
+      borderRadius: '16px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+    }}>
       <CardContent>
-        <Typography variant="h5" gutterBottom>
+        <Typography 
+          variant="h5" 
+          gutterBottom
+          sx={{ 
+            color: '#ffffff',
+            fontWeight: 'bold',
+            textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+            mb: 3,
+          }}
+        >
           Create Staking Option
         </Typography>
         <Box component="form" onSubmit={handleSubmit}>
-          <FormControl fullWidth margin="normal">
+          <FormControl fullWidth margin="normal" sx={selectStyles}>
             <InputLabel>Select Token</InputLabel>
             <Select
               value={tokenAddress}
               onChange={(e) => setTokenAddress(e.target.value)}
               disabled={isPending}
               required
+              sx={{
+                '& .MuiSelect-select': {
+                  color: '#ffffff',
+                },
+              }}
             >
               {(registeredContracts as string[])?.map(pool => (
-                <MenuItem key={pool} value={pool}>
+                <MenuItem 
+                  key={pool} 
+                  value={pool}
+                  sx={{
+                    color: '#ffffff',
+                    '&:hover': {
+                      backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(156, 39, 176, 0.3)',
+                      },
+                    },
+                  }}
+                >
                   {pool}
                 </MenuItem>
               ))}
@@ -113,7 +182,7 @@ export const CreateStakingOption = () => {
 
           <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
             <TextField
-              sx={{ flex: 2 }}
+              sx={{ ...commonInputStyles, flex: 2 }}
               label="Duration"
               type="number"
               value={duration}
@@ -122,7 +191,7 @@ export const CreateStakingOption = () => {
               inputProps={{ min: "1" }}
               required
             />
-            <FormControl sx={{ flex: 1 }}>
+            <FormControl sx={{ ...selectStyles, flex: 1 }}>
               <InputLabel>Unit</InputLabel>
               <Select
                 value={durationUnit}
@@ -130,9 +199,26 @@ export const CreateStakingOption = () => {
                 disabled={isPending}
                 label="Unit"
               >
-                <MenuItem value="days">Days</MenuItem>
-                <MenuItem value="months">Months</MenuItem>
-                <MenuItem value="years">Years</MenuItem>
+                {['days', 'months', 'years'].map(unit => (
+                  <MenuItem 
+                    key={unit} 
+                    value={unit}
+                    sx={{
+                      color: '#ffffff',
+                      '&:hover': {
+                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(156, 39, 176, 0.3)',
+                        },
+                      },
+                    }}
+                  >
+                    {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>
@@ -152,13 +238,24 @@ export const CreateStakingOption = () => {
               step: "0.01"
             }}
             helperText="APY must be between 0% and 500%"
+            sx={commonInputStyles}
           />
 
           <Button
             variant="contained"
             type="submit"
             disabled={isPending || !tokenAddress || !duration || !apy}
-            sx={{ mt: 2 }}
+            sx={{ 
+              mt: 3,
+              backgroundColor: 'rgba(156, 39, 176, 0.8)',
+              backdropFilter: 'blur(5px)',
+              '&:hover': {
+                backgroundColor: 'rgba(156, 39, 176, 0.9)',
+              },
+              '&:disabled': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
             fullWidth
           >
             {isPending ? (
@@ -169,7 +266,14 @@ export const CreateStakingOption = () => {
           </Button>
 
           {error && (
-            <FormHelperText error sx={{ mt: 1 }}>
+            <FormHelperText 
+              error 
+              sx={{ 
+                mt: 1,
+                color: '#ff6b6b',
+                fontSize: '0.875rem',
+              }}
+            >
               {error.message}
             </FormHelperText>
           )}
