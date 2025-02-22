@@ -1,16 +1,16 @@
 import { Box, Container, Typography } from "@mui/material";
-import { ConnectButton, RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import { useAccount } from "wagmi";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { PoolsList } from "./components/PoolsList";
 import { CreatePool } from "./components/CreatePool";
 import { CreateStakingOption } from "./components/CreateStakingOption";
-import { Navigation } from "./components/Navigation";
+import { Sidebar } from "./components/Sidebar";
 import rollinStakingIcon from "./assets/icon.png";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
+import { CustomConnectButton } from "./components/CustomConnectButton";
 
-// Define the animation
 const gradientAnimation = keyframes`
   0% {
     background-position: 0% 50%;
@@ -23,7 +23,6 @@ const gradientAnimation = keyframes`
   }
 `;
 
-// Create styled component for the animated background
 const AnimatedBackground = styled(Box)`
   min-height: 100vh;
   background: linear-gradient(
@@ -37,7 +36,11 @@ const AnimatedBackground = styled(Box)`
   animation: ${gradientAnimation} 15s ease infinite;
 `;
 
-// Custom theme for RainbowKit
+const MainContent = styled(Box)`
+  margin-left: 240px; // Same as sidebar width
+  width: calc(100% - 240px);
+`;
+
 const customTheme = lightTheme({
   accentColor: '#9C27B0',
   accentColorForeground: 'white',
@@ -48,203 +51,75 @@ const customTheme = lightTheme({
 export const App = () => {
   const { isConnected } = useAccount();
 
-  const CustomConnectButton = () => (
-    <ConnectButton.Custom>
-      {({
-        account,
-        chain,
-        openAccountModal,
-        openChainModal,
-        openConnectModal,
-        mounted,
-      }) => {
-        const commonButtonStyles = {
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(5px)',
-          color: '#ffffff',
-          padding: '12px 20px',
-          borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          cursor: 'pointer',
-          fontSize: '16px',
-          fontWeight: '500',
-          transition: 'all 0.2s ease',
-        };
-
-        return (
-          <div
-            {...(!mounted && {
-              'aria-hidden': true,
-              style: {
-                opacity: 0,
-                pointerEvents: 'none',
-                userSelect: 'none',
-              },
-            })}
-          >
-            {(() => {
-              if (!mounted || !account || !chain) {
-                return (
-                  <button
-                    onClick={openConnectModal}
-                    type="button"
-                    style={commonButtonStyles}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    }}
-                  >
-                    Connect Wallet
-                  </button>
-                );
-              }
-
-              return (
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={openChainModal}
-                    type="button"
-                    style={{
-                      ...commonButtonStyles,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      minWidth: 'fit-content',
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    }}
-                  >
-                    {chain.hasIcon && (
-                      <div
-                        style={{
-                          background: chain.iconBackground,
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {chain.iconUrl && (
-                          <img
-                            alt={chain.name ?? 'Chain icon'}
-                            src={chain.iconUrl}
-                            style={{ width: '100%', height: '100%' }}
-                          />
-                        )}
-                      </div>
-                    )}
-                    {chain.name}
-                  </button>
-
-                  <button
-                    onClick={openAccountModal}
-                    type="button"
-                    style={{
-                      ...commonButtonStyles,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      minWidth: 'fit-content',
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    }}
-                  >
-                    <span style={{ whiteSpace: 'nowrap' }}>
-                      {account.displayBalance ?? 0}
-                    </span>
-                    <span style={{ 
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '140px',
-                    }}>
-                      {account.displayName}
-                    </span>
-                  </button>
-                </div>
-              );
-            })()}
-          </div>
-        );
-      }}
-    </ConnectButton.Custom>
-  );
-
   return (
     <RainbowKitProvider theme={customTheme}>
       <AnimatedBackground>
-        <Container maxWidth='lg' sx={{ py: 4 }}>
-          <Box
-            sx={{
-              mb: 4,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <img
-                src={rollinStakingIcon}
-                alt='Rollin Logo'
-                style={{
-                  height: "40px",
-                  width: "auto",
-                }}
-              />
-              <Typography
-                variant='h4'
-                sx={{
-                  color: "#ffffff",
-                  fontWeight: "bold",
-                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                Rollin Staking
-              </Typography>
-            </Box>
-            <CustomConnectButton />
-          </Box>
-          {isConnected ? (
-            <>
-              <Navigation />
-              <Box sx={{ mt: 3 }}>
-                <Routes>
-                  <Route path='/' element={<PoolsList />} />
-                  <Route path='/create-pool' element={<CreatePool />} />
-                  <Route path='/create-option' element={<CreateStakingOption />} />
-                  <Route path='*' element={<Navigate to='/' replace />} />
-                </Routes>
-              </Box>
-            </>
-          ) : (
-            <Typography 
-              variant='h6' 
-              textAlign='center'
-              sx={{ 
-                color: '#ffffff',
-                mt: 4,
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(5px)',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
+        <Sidebar />
+        <MainContent>
+          <Container maxWidth='lg' sx={{ py: 4 }}>
+            <Box
+              sx={{
+                mb: 4,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
-              Please connect your wallet to continue
-            </Typography>
-          )}
-        </Container>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <img
+                  src={rollinStakingIcon}
+                  alt='Rollin Logo'
+                  style={{
+                    height: "40px",
+                    width: "auto",
+                  }}
+                />
+                <Typography
+                  variant='h4'
+                  sx={{
+                    color: "#ffffff",
+                    fontWeight: "bold",
+                    textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                  }}
+                >
+                  Rollin Staking
+                </Typography>
+              </Box>
+              <CustomConnectButton />
+            </Box>
+            {isConnected ? (
+              <>
+                <Box sx={{ mt: 3 }}>
+                  <Routes>
+                    <Route path="/stake">
+                      <Route index element={<PoolsList />} />
+                      <Route path="create-pool" element={<CreatePool />} />
+                      <Route path="create-option" element={<CreateStakingOption />} />
+                    </Route>
+                    <Route path="/" element={<Navigate to="/stake" replace />} />
+                    <Route path="*" element={<Navigate to="/stake" replace />} />
+                  </Routes>
+                </Box>
+              </>
+            ) : (
+              <Typography 
+                variant='h6' 
+                textAlign='center'
+                sx={{ 
+                  color: '#ffffff',
+                  mt: 4,
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(5px)',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                Please connect your wallet to continue
+              </Typography>
+            )}
+          </Container>
+        </MainContent>
       </AnimatedBackground>
     </RainbowKitProvider>
   );
