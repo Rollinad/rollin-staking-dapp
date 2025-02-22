@@ -1,30 +1,33 @@
-import { useReadContract, useWriteContract } from 'wagmi'
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from '../constants'
-import { StakeData } from '../types/staking'
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
+import { StakeData } from "../types/staking";
 
 export function useStakingContract() {
+  const { address: userAddress } = useAccount();
+
   const { data: registeredContracts } = useReadContract({
     abi: STAKING_CONTRACT_ABI,
     address: STAKING_CONTRACT_ADDRESS,
-    functionName: 'getRegisteredContracts',
-  })
+    functionName: "getRegisteredContracts",
+  });
 
   const { data: stakingData } = useReadContract({
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_CONTRACT_ABI,
-    functionName: 'getStakingData',
-  }) as { data: StakeData[] | undefined }
+    functionName: "getStakingData",
+    account: userAddress,
+  }) as { data: StakeData[] | undefined };
 
-  const { writeContract, isPending, error } = useWriteContract()
+  const { writeContract, isPending, error } = useWriteContract();
 
   const createPool = async (tokenAddress: string) => {
     return writeContract({
       abi: STAKING_CONTRACT_ABI,
       address: STAKING_CONTRACT_ADDRESS,
-      functionName: 'addStakingPool',
+      functionName: "addStakingPool",
       args: [tokenAddress],
-    })
-  }
+    });
+  };
 
   const createStakingOption = async (
     tokenAddress: string,
@@ -34,10 +37,10 @@ export function useStakingContract() {
     return writeContract({
       abi: STAKING_CONTRACT_ABI,
       address: STAKING_CONTRACT_ADDRESS,
-      functionName: 'addStakingOption',
+      functionName: "addStakingOption",
       args: [tokenAddress, duration, apy],
-    })
-  }
+    });
+  };
 
   const stake = async (
     tokenAddress: string,
@@ -47,10 +50,10 @@ export function useStakingContract() {
     return writeContract({
       abi: STAKING_CONTRACT_ABI,
       address: STAKING_CONTRACT_ADDRESS,
-      functionName: 'stake',
+      functionName: "stake",
       args: [tokenAddress, stakingOptionId, amount],
-    })
-  }
+    });
+  };
 
   const unstake = async (
     tokenAddress: string,
@@ -60,10 +63,10 @@ export function useStakingContract() {
     return writeContract({
       abi: STAKING_CONTRACT_ABI,
       address: STAKING_CONTRACT_ADDRESS,
-      functionName: 'unstake',
+      functionName: "unstake",
       args: [tokenAddress, stakingOptionId, amount],
-    })
-  }
+    });
+  };
 
   const unstakeFreeze = async (
     tokenAddress: string,
@@ -73,19 +76,19 @@ export function useStakingContract() {
     return writeContract({
       abi: STAKING_CONTRACT_ABI,
       address: STAKING_CONTRACT_ADDRESS,
-      functionName: 'unstakeFreeze',
+      functionName: "unstakeFreeze",
       args: [tokenAddress, stakingOptionId, amount],
-    })
-  }
+    });
+  };
 
   const withdrawFrozen = async (tokenAddress: string) => {
     return writeContract({
       abi: STAKING_CONTRACT_ABI,
       address: STAKING_CONTRACT_ADDRESS,
-      functionName: 'withdrawFrozen',
+      functionName: "withdrawFrozen",
       args: [tokenAddress],
-    })
-  }
+    });
+  };
 
   return {
     registeredContracts,
@@ -98,5 +101,5 @@ export function useStakingContract() {
     withdrawFrozen,
     isPending,
     error,
-  }
+  };
 }

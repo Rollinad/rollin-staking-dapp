@@ -1,0 +1,7 @@
+@font-face {
+    font-family: 'Gotham';
+    src: url('../assets/fonts/GothamNarrow-Medium.otf') format('opentype');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+  }
