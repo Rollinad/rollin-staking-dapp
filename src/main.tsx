@@ -11,6 +11,7 @@ import { SnackbarProvider } from './contexts/SnackbarContext'
 import { App } from './App'
 import { config } from './config/chain'
 import theme from './theme'
+import './styles/fonts.css';
 
 const queryClient = new QueryClient()
 
