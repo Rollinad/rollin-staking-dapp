@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useAccount, useConnect as useWagmiConnect } from 'wagmi'
 
 export function useConnect() {
-  const { connector, address, isConnected } = useAccount()
+  const { address, isConnected } = useAccount()
   const { connectors, connect, status, error } = useWagmiConnect()
 
   const handleConnect = useCallback(async () => {
