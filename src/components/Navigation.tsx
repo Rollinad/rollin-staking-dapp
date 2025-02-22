@@ -24,13 +24,26 @@ export const Navigation = () => {
   }
 
   return (
-    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+    <Box sx={{ 
+      borderBottom: 1, 
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: '8px',
+      padding: '4px',
+      backdropFilter: 'blur(5px)',
+    }}>
       <Tabs 
         value={value} 
         onChange={handleChange}
-        textColor="secondary"
+        textColor="inherit"
         indicatorColor="secondary"
         variant="fullWidth"
+        sx={{
+          '& .MuiTabs-indicator': {
+            backgroundColor: '#fff',
+            height: '3px',
+          },
+        }}
       >
         {routes.map(route => (
           <Tab 
@@ -39,7 +52,16 @@ export const Navigation = () => {
             sx={{ 
               fontSize: '1rem',
               fontWeight: 'medium',
-              textTransform: 'none'
+              textTransform: 'none',
+              color: '#fff',
+              '&.Mui-selected': {
+                color: '#fff',
+                fontWeight: 'bold',
+              },
+              '&:hover': {
+                color: '#fff',
+                opacity: 0.8,
+              },
             }}
           />
         ))}
