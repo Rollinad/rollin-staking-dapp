@@ -1,5 +1,5 @@
 import { Box, Container, Typography } from "@mui/material";
-import { ConnectButton, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import { ConnectButton, RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import { useAccount } from "wagmi";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { PoolsList } from "./components/PoolsList";
@@ -38,7 +38,7 @@ const AnimatedBackground = styled(Box)`
 `;
 
 // Custom theme for RainbowKit
-const customTheme = darkTheme({
+const customTheme = lightTheme({
   accentColor: '#9C27B0',
   accentColorForeground: 'white',
   borderRadius: 'large',
@@ -161,7 +161,7 @@ export const App = () => {
                     }}
                   >
                     <span style={{ whiteSpace: 'nowrap' }}>
-                      {account.displayBalance}
+                      {account.displayBalance ?? 0}
                     </span>
                     <span style={{ 
                       whiteSpace: 'nowrap',
