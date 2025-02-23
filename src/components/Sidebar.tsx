@@ -184,7 +184,10 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
               </StyledSubListItemButton>
             </List>
           </Collapse>
-          <StyledListItemButton disabled>
+          <StyledListItemButton
+            onClick={() => handleNavigation("/swap")}
+            selected={location.pathname.startsWith("/swap")}
+          >
             <StyledListItemIcon>
               <SwapHorizIcon />
             </StyledListItemIcon>

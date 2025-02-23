@@ -11,6 +11,7 @@ import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
+import { SwapCard } from "./components/SwapCard";
 
 const gradientAnimation = keyframes`
   0% {
@@ -132,6 +133,7 @@ export const App = () => {
                     </Route>
                     <Route path="/" element={<Navigate to="/stake" replace />} />
                     <Route path="*" element={<Navigate to="/stake" replace />} />
+                    <Route path="/swap" element={<SwapCard />} />
                   </Routes>
                 </Box>
               </>
