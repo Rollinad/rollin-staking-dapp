@@ -124,6 +124,7 @@ export const SwapCard = () => {
     }, 500);
 
     return () => clearTimeout(debounce);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sellAmount, sellToken, buyToken]);
 
   const handleSwap = async () => {
