@@ -221,8 +221,6 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
   const { stakingOptions, freezingBalance, availableFrozen } =
     useStakingToken(address);
 
-  console.log(`freezingBalance ${freezingBalance}`);
-
   const handleError = (
     message: string,
     severity: ErrorState["severity"] = "error"
@@ -254,6 +252,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     if (error && error.open) {
       showSnackbar(error.message, error.severity);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
   useEffect(() => {
@@ -344,12 +343,6 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
 
     try {
       if (tab === 0) {
-        console.log("Attempting to stake:", {
-          address,
-          stakingOptionId: selectedOption.stakingOptionId,
-          amount: parseUnits(amount, Number(decimals) || 18).toString(),
-        });
-
         await stake(
           address,
           selectedOption.stakingOptionId,
@@ -361,14 +354,6 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
         const stakeDuration = Number(selectedOption.duration);
         const stakeStartTime = userStake ? Number(userStake.startTime) : 0;
         const endTime = stakeStartTime + stakeDuration;
-
-        console.log("Unstake timing check:", {
-          currentTime,
-          stakeDuration,
-          stakeStartTime,
-          endTime,
-          isLocked: currentTime < endTime,
-        });
 
         if (currentTime < endTime) {
           // Show confirmation dialog for locked stakes
