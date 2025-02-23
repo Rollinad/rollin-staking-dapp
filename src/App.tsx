@@ -1,4 +1,4 @@
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Container, Typography, useMediaQuery } from "@mui/material";
 import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import { useAccount } from "wagmi";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -10,6 +10,7 @@ import rollinStakingIcon from "./assets/icon.png";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { CustomConnectButton } from "./components/CustomConnectButton";
+import { useState, useEffect } from "react";
 
 const gradientAnimation = keyframes`
   0% {
@@ -36,10 +37,21 @@ const AnimatedBackground = styled(Box)`
   animation: ${gradientAnimation} 15s ease infinite;
 `;
 
-const MainContent = styled(Box)`
-  margin-left: 240px; // Same as sidebar width
-  width: calc(100% - 240px);
-`;
+interface MainContentProps {
+  sidebarCollapsed: boolean;
+}
+
+const MainContent = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'sidebarCollapsed'
+})<MainContentProps>(({ sidebarCollapsed }) => ({
+  marginLeft: sidebarCollapsed ? '64px' : '240px',
+  width: `calc(100% - ${sidebarCollapsed ? '64px' : '240px'})`,
+  transition: 'margin 225ms cubic-bezier(0.4, 0, 0.6, 1), width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
+  '@media (max-width: 600px)': {
+    marginLeft: 0,
+    width: '100%',
+  },
+}));
 
 const customTheme = lightTheme({
   accentColor: '#9C27B0',
@@ -50,12 +62,24 @@ const customTheme = lightTheme({
 
 export const App = () => {
   const { isConnected } = useAccount();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isMobile = useMediaQuery('(max-width:600px)');
+
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile]);
+
+  const handleSidebarCollapse = (collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+  };
 
   return (
     <RainbowKitProvider theme={customTheme}>
       <AnimatedBackground>
-        <Sidebar />
-        <MainContent>
+        <Sidebar onCollapse={handleSidebarCollapse} />
+        <MainContent sidebarCollapsed={sidebarCollapsed}>
           <Container maxWidth='lg' sx={{ py: 4 }}>
             <Box
               sx={{
@@ -65,7 +89,12 @@ export const App = () => {
                 alignItems: "center",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 2,
+                ml: { xs: 5, sm: 6 } // Add margin to move logo and title right
+              }}>
                 <img
                   src={rollinStakingIcon}
                   alt='Rollin Logo'
@@ -80,6 +109,11 @@ export const App = () => {
                     color: "#ffffff",
                     fontWeight: "bold",
                     textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                    fontSize: {
+                      xs: '1.5rem',    // 24px for mobile
+                      sm: '2rem',      // 32px for tablet
+                      md: '2.125rem',  // 34px (default h4 size)
+                    },
                   }}
                 >
                   Rollin Staking
