@@ -1,11 +1,15 @@
-import { useReadContract, useWriteContract } from 'wagmi'
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { formatUnits, erc20Abi } from 'viem'
-import { useAccount } from 'wagmi'
 import { STAKING_CONTRACT_ADDRESS } from '@/constants'
+import { useEffect } from 'react'
 
 export function useERC20(address: `0x${string}`) {
   const { address: accountAddress } = useAccount()
-  const { writeContract } = useWriteContract()
+  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
+  
+  const { isLoading: isWaitingForTransaction, isSuccess: isTransactionSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
 
   const { data: name } = useReadContract({
     address,
@@ -32,22 +36,47 @@ export function useERC20(address: `0x${string}`) {
     args: accountAddress ? [accountAddress] : undefined,
   })
 
-
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address,
     abi: erc20Abi,
     functionName: 'allowance',
     args: accountAddress ? [accountAddress, STAKING_CONTRACT_ADDRESS] : undefined,
+    query: {
+      // More aggressive refetching during approval
+      refetchInterval: (isWritePending || isWaitingForTransaction) ? 1000 : false,
+      // Refetch immediately when transaction succeeds
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    }
   })
+
+  // Watch for transaction success and refetch
+  useEffect(() => {
+    if (isTransactionSuccess) {
+      refetchAllowance()
+    }
+  }, [isTransactionSuccess, refetchAllowance])
 
   const approve = async (spender: `0x${string}`, amount: bigint) => {
     if (!writeContract) return
-    return writeContract({
-      address,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [spender, amount],
-    })
+    
+    try {
+      const hash = await writeContract({
+        address,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [spender, amount],
+      })
+      
+      // Immediate refetch after sending transaction
+      await refetchAllowance()
+      
+      return hash
+    } catch (error) {
+      console.error('Approval error:', error)
+      throw error
+    }
   }
 
   return {
@@ -58,5 +87,6 @@ export function useERC20(address: `0x${string}`) {
     allowance: allowance ? formatUnits(allowance as bigint, Number(decimals) || 18) : '0',
     approve,
     refetchAllowance,
+    isApproving: isWritePending || isWaitingForTransaction,
   }
 }

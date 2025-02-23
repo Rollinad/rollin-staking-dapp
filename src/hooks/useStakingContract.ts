@@ -1,9 +1,29 @@
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useReadContract,
+  useSimulateContract,
+  useWriteContract,
+} from "wagmi";
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
-import { StakeData } from "../types/staking";
+import { ErrorMessage, StakeData } from "../types/staking";
+import { useState } from "react";
 
 export function useStakingContract() {
   const { address: userAddress } = useAccount();
+
+  const [createPoolParams, setCreatePoolParams] = useState<{
+    tokenAddress: string;
+  }>({ tokenAddress: "" });
+
+  const [stakeParams, setStakeParams] = useState<{
+    tokenAddress: string;
+    stakingOptionId: string;
+    amount: bigint;
+  }>({
+    tokenAddress: "",
+    stakingOptionId: "",
+    amount: BigInt(0),
+  });
 
   const { data: registeredContracts } = useReadContract({
     abi: STAKING_CONTRACT_ABI,
@@ -18,15 +38,81 @@ export function useStakingContract() {
     account: userAddress,
   }) as { data: StakeData[] | undefined };
 
+  const { data: poolFee } = useReadContract({
+    address: STAKING_CONTRACT_ADDRESS,
+    abi: STAKING_CONTRACT_ABI,
+    functionName: "getPoolFee",
+  });
+
   const { writeContract, isPending, error } = useWriteContract();
 
-  const createPool = async (tokenAddress: string) => {
-    return writeContract({
-      abi: STAKING_CONTRACT_ABI,
+  const { data: createPoolSimulation, error: createPoolSimError } =
+    useSimulateContract({
       address: STAKING_CONTRACT_ADDRESS,
+      abi: STAKING_CONTRACT_ABI,
       functionName: "addStakingPool",
-      args: [tokenAddress],
+      args: createPoolParams.tokenAddress
+        ? [createPoolParams.tokenAddress]
+        : undefined,
+      value: poolFee as bigint,
+      account: userAddress,
     });
+
+  const { data: stakeSimulation, error: stakeSimError } = useSimulateContract({
+    address: STAKING_CONTRACT_ADDRESS,
+    abi: STAKING_CONTRACT_ABI,
+    functionName: "stake",
+    args: stakeParams.tokenAddress
+      ? [
+          stakeParams.tokenAddress,
+          stakeParams.stakingOptionId,
+          stakeParams.amount,
+        ]
+      : undefined,
+    account: userAddress,
+  });
+
+  const handleContractError = (error: ErrorMessage): string => {
+    const errorMessage = error.message || error.details || String(error);
+
+    if (errorMessage.includes("Invalid token")) {
+      return "Invalid token address provided";
+    }
+    if (errorMessage.includes("Pool exists")) {
+      return "Staking pool already exists for this token";
+    }
+    if (errorMessage.includes("Insufficient allocation")) {
+      return "Insufficient token allocation for pool creation";
+    }
+    if (errorMessage.includes("Insufficient fee")) {
+      return "Insufficient fee provided for pool creation";
+    }
+    if (errorMessage.includes("Not authorized")) {
+      return "Not authorized to perform this action";
+    }
+
+    return `Transaction failed: ${errorMessage}`;
+  };
+
+  const createPool = async (tokenAddress: string) => {
+    try {
+      // Set params and wait for simulation to update
+      setCreatePoolParams({ tokenAddress });
+
+      // Check simulation results
+      if (createPoolSimError) {
+        throw new Error(createPoolSimError.message);
+      }
+
+      if (!createPoolSimulation?.request) {
+        throw new Error("Failed to simulate transaction");
+      }
+
+      return await writeContract(createPoolSimulation.request);
+    } catch (err) {
+      const errorMessage = handleContractError(err as ErrorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const createStakingOption = async (
@@ -47,12 +133,30 @@ export function useStakingContract() {
     stakingOptionId: string,
     amount: bigint
   ) => {
-    return writeContract({
-      abi: STAKING_CONTRACT_ABI,
-      address: STAKING_CONTRACT_ADDRESS,
-      functionName: "stake",
-      args: [tokenAddress, stakingOptionId, amount],
-    });
+    try {
+      // Set params and wait for simulation to update
+      setStakeParams({ tokenAddress, stakingOptionId, amount });
+
+      // Check simulation results
+      if (stakeSimError) {
+        throw new Error(stakeSimError.message);
+      }
+
+      if (!stakeSimulation?.request) {
+        throw new Error("Failed to simulate transaction");
+      }
+
+      return writeContract({
+        abi: STAKING_CONTRACT_ABI,
+        address: STAKING_CONTRACT_ADDRESS,
+        functionName: "stake",
+        args: [tokenAddress, stakingOptionId, amount],
+      });  
+    } catch (err) {
+      const errorMessage = handleContractError(err as ErrorMessage);
+      console.log(`error staking ${errorMessage}`)
+      throw new Error(errorMessage);
+    }
   };
 
   const unstake = async (

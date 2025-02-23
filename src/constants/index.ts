@@ -1,5 +1,4 @@
-export const STAKING_CONTRACT_ADDRESS =
-  "0xBAf4b5Db8a89AF459aE2c8E8241a455DEf38aDdb";
+export const STAKING_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 export const STAKING_CONTRACT_ABI = [
   {
     inputs: [

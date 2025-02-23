@@ -15,3 +15,8 @@ export interface StakeData {
   startTime: bigint;
   stakingOptionId: string;
 }
+
+export interface ErrorMessage {
+  message?: string;
+  details?: string[];
+}
