@@ -2,16 +2,16 @@ import { Box, Container, Typography, useMediaQuery } from "@mui/material";
 import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import { useAccount } from "wagmi";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { PoolsList } from "./components/PoolsList";
-import { CreatePool } from "./components/CreatePool";
-import { CreateStakingOption } from "./components/CreateStakingOption";
+import { PoolsList } from "./components/staking/PoolsList";
+import { CreatePool } from "./components/staking/CreatePool";
+import { CreateStakingOption } from "./components/staking/CreateStakingOption";
 import { Sidebar } from "./components/Sidebar";
 import rollinStakingIcon from "./assets/icon.png";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
-import { SwapCard } from "./components/SwapCard";
+import { SwapCard } from "./components/swapping/SwapCard";
 
 const gradientAnimation = keyframes`
   0% {

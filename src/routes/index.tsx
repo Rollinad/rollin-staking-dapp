@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { PoolsList } from '../components/PoolsList'
-import { CreatePool } from '../components/CreatePool'
-import { CreateStakingOption } from '../components/CreateStakingOption'
+import { PoolsList } from '../components/staking/PoolsList'
+import { CreatePool } from '../components/staking/CreatePool'
+import { CreateStakingOption } from '../components/staking/CreateStakingOption'
 
 export const AppRoutes = () => {
   return (

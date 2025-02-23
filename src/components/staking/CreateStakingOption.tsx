@@ -14,8 +14,8 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material'
-import { useStakingContract } from '../hooks/useStakingContract'
-import { useSnackbar } from '../contexts/SnackbarContext'
+import { useStakingContract } from '../../hooks/useStakingContract'
+import { useSnackbar } from '../../contexts/SnackbarContext'
 import { isAddress } from 'viem'
 
 interface ErrorMessage {

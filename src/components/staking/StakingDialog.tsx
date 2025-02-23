@@ -20,11 +20,11 @@ import {
   styled,
   alpha,
 } from "@mui/material";
-import { useERC20 } from "../hooks/useERC20";
-import { useStakingContract } from "../hooks/useStakingContract";
+import { useERC20 } from "../../hooks/useERC20";
+import { useStakingContract } from "../../hooks/useStakingContract";
 import { formatUnits, parseUnits } from "viem";
-import { ErrorMessage, StakeData, StakingOption } from "../types/staking";
-import { STAKING_CONTRACT_ADDRESS } from "../constants";
+import { ErrorMessage, StakeData, StakingOption } from "../../types/staking";
+import { STAKING_CONTRACT_ADDRESS } from "../../constants";
 import { useStakingToken } from "@/hooks/useStakingToken";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 

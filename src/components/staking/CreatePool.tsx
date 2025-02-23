@@ -8,8 +8,8 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
-import { useStakingContract } from "../hooks/useStakingContract";
-import { useSnackbar } from "../contexts/SnackbarContext";
+import { useStakingContract } from "../../hooks/useStakingContract";
+import { useSnackbar } from "../../contexts/SnackbarContext";
 import { isAddress } from "viem";
 
 export const CreatePool = () => {

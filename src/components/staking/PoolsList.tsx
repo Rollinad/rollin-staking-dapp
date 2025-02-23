@@ -13,10 +13,10 @@ import {
   Paper,
 } from "@mui/material";
 import { useReadContract } from "wagmi";
-import { useERC20 } from "../hooks/useERC20";
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
+import { useERC20 } from "../../hooks/useERC20";
+import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../../constants";
 import { formatUnits } from "viem";
-import { useStakingToken } from "../hooks/useStakingToken";
+import { useStakingToken } from "../../hooks/useStakingToken";
 import { StakingDialog } from "./StakingDialog";
 
 interface PoolItemProps {

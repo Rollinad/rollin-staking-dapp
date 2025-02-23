@@ -14,8 +14,8 @@ import {
 import { SwapVert, Settings, KeyboardArrowDown } from "@mui/icons-material";
 import { useAccount, useBalance } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { ErrorMessage } from "@/types/staking";
 import { TokenSelectDialog } from "./TokenSelectDialog";
+import { ErrorMessage } from "../../types/staking";
 
 // Token interface
 interface Token {
@@ -44,13 +44,6 @@ const INITIAL_TOKENS = {
   },
 };
 
-// API headers
-const headers = new Headers({
-  "Content-Type": "application/json",
-  "0x-api-key": import.meta.env.VITE_0X_API_KEY,
-  "0x-version": "v2",
-});
-
 export const SwapCard = () => {
   const { address, isConnected } = useAccount();
   const [sellToken, setSellToken] = useState<Token>(INITIAL_TOKENS.ETH);
@@ -61,6 +54,8 @@ export const SwapCard = () => {
   const [error, setError] = useState("");
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [buyDialogOpen, setBuyDialogOpen] = useState(false);
+
+  const { chainId } = useAccount();
 
   // Get balance of selected token
   const { data: balance } = useBalance({
@@ -92,17 +87,19 @@ export const SwapCard = () => {
         sellToken.decimals
       ).toString();
 
-      const params = new URLSearchParams({
-        sellToken: sellToken.address,
-        buyToken: buyToken.address,
-        sellAmount: sellAmountBase,
-        takerAddress: address!,
+      const response = await fetch('/api/rollin-protocol/swap/price', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sellToken: sellToken.address,
+          buyToken: buyToken.address,
+          sellAmount: sellAmountBase,
+          takerAddress: address!,
+          chainId
+        }),
       });
-
-      const response = await fetch(
-        `https://api.0x.org/swap/permit2/price?${params}`,
-        { headers }
-      );
 
       const quote = await response.json();
 
@@ -141,17 +138,19 @@ export const SwapCard = () => {
         sellToken.decimals
       ).toString();
 
-      const params = new URLSearchParams({
-        sellToken: sellToken.address,
-        buyToken: buyToken.address,
-        sellAmount: sellAmountBase,
-        takerAddress: address!,
+      const response = await fetch('/api/rollin-protocol/swap/quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sellToken: sellToken.address,
+          buyToken: buyToken.address,
+          sellAmount: sellAmountBase,
+          takerAddress: address!,
+          chainId
+        }),
       });
-
-      const response = await fetch(
-        `https://api.0x.org/swap/permit2/quote?${params}`,
-        { headers }
-      );
 
       const quote = await response.json();
 
