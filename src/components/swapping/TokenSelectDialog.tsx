@@ -16,52 +16,30 @@ import {
   InputAdornment,
   Divider,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
-import { Search, Add, Warning } from "@mui/icons-material";
+import { Search, Add, Warning, VerifiedUser } from "@mui/icons-material";
 import { erc20Abi, formatUnits, isAddress } from "viem";
 import type { Address } from "viem";
 import { useReadContract } from "wagmi";
 import { useTokensData } from "../../hooks/useTokensData";
 import { ErrorMessage } from "../../types/staking";
-
-interface Token {
-  symbol: string;
-  name: string;
-  address: string;
-  decimals: number;
-  logoURI?: string;
-}
+import { Token } from "../../hooks/useTokens";
 
 interface TokenSelectDialogProps {
   open: boolean;
   onClose: () => void;
   onSelect: (token: Token) => void;
   selectedToken?: Token;
+  availableTokens: Token[];
 }
-
-// Common tokens on Base network
-const COMMON_TOKENS: Token[] = [
-  {
-    symbol: "ETH",
-    name: "Ethereum",
-    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-    decimals: 18,
-    logoURI: "/eth-logo.png",
-  },
-  {
-    symbol: "USDC",
-    name: "USD Coin",
-    address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-    decimals: 6,
-    logoURI: "/usdc-logo.png",
-  },
-];
 
 export const TokenSelectDialog = ({
   open,
   onClose,
   onSelect,
   selectedToken,
+  availableTokens,
 }: TokenSelectDialogProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [customAddress, setCustomAddress] = useState("");
@@ -89,26 +67,45 @@ export const TokenSelectDialog = ({
 
   // Get token addresses for data fetching
   const tokenAddresses = useMemo(
-    () => COMMON_TOKENS.map((token) => token.address as Address),
-    []
+    () => availableTokens.map((token) => token.address as Address),
+    [availableTokens]
   );
 
-  // Fetch all tokens data at once
+  // Fetch all tokens data at once using updated hook
   const tokensData = useTokensData(tokenAddresses);
 
   // Filter tokens and combine with fetched data
   const filteredTokens = useMemo(
     () =>
-      COMMON_TOKENS.filter(
-        (token) =>
-          token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          token.address.toLowerCase().includes(searchQuery.toLowerCase())
-      ).map((token) => ({
-        ...token,
-        balance: tokensData[token.address]?.balance,
-      })),
-    [searchQuery, tokensData]
+      availableTokens
+        .filter(
+          (token) =>
+            token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            token.address.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map((token) => ({
+          ...token,
+          balance: tokensData[token.address]?.balance
+        })),
+    [searchQuery, availableTokens, tokensData]
+  );
+
+  // Token name with verification badge component
+  const TokenName = ({ token }: { token: Token }) => (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+      <Typography sx={{ color: "#fff" }}>{token.symbol}</Typography>
+      {token.verified && (
+        <Tooltip title="Verified Token">
+          <VerifiedUser
+            sx={{
+              fontSize: 16,
+              color: "#00e676",
+            }}
+          />
+        </Tooltip>
+      )}
+    </Box>
   );
 
   const handleLoadCustomToken = async () => {
@@ -129,7 +126,9 @@ export const TokenSelectDialog = ({
         address: customAddress,
         symbol: customTokenSymbol as string,
         name: customTokenName as string,
-        decimals: Number(customTokenDecimals),
+        decimal: Number(customTokenDecimals),
+        verified: false, // Custom tokens are unverified by default
+        logoURI: "",
       };
 
       onSelect(newToken);
@@ -147,7 +146,7 @@ export const TokenSelectDialog = ({
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth='sm'
+      maxWidth="sm"
       PaperProps={{
         sx: {
           backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -161,7 +160,7 @@ export const TokenSelectDialog = ({
       <DialogContent>
         <TextField
           fullWidth
-          placeholder='Search by name or paste address'
+          placeholder="Search by name or paste address"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={{
@@ -173,74 +172,51 @@ export const TokenSelectDialog = ({
           }}
           InputProps={{
             startAdornment: (
-              <InputAdornment position='start'>
+              <InputAdornment position="start">
                 <Search sx={{ color: "rgba(255, 255, 255, 0.5)" }} />
               </InputAdornment>
             ),
           }}
         />
 
-        <List
-          sx={{
-            maxHeight: 400,
-            overflow: "auto",
-            "&::-webkit-scrollbar": {
-              width: "8px",
-            },
-            "&::-webkit-scrollbar-track": {
-              background: "rgba(255, 255, 255, 0.05)",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              background: "rgba(255, 255, 255, 0.2)",
-              borderRadius: "4px",
-            },
-          }}
-        >
-          {filteredTokens.map((token) => (
-            <ListItemButton
-              key={token.address}
-              selected={selectedToken?.address === token.address}
-              onClick={() => {
-                onSelect(token);
-                onClose();
-              }}
-              sx={{
-                borderRadius: 1,
-                mb: 1,
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                },
-                "&.Mui-selected": {
-                  backgroundColor: "rgba(255, 255, 255, 0.15)",
-                },
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar
-                  src={token.logoURI}
-                  sx={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                >
-                  {token.symbol.charAt(0)}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Typography sx={{ color: "#fff" }}>{token.symbol}</Typography>
-                }
-                secondary={
-                  <Typography sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                    {token.name}
-                  </Typography>
-                }
-              />
-              {token.balance && (
-                <Typography sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
-                  {formatUnits(token.balance, token.decimals)}
+<List>
+        {filteredTokens.map((token) => (
+          <ListItemButton
+            key={token.address}
+            selected={selectedToken?.address === token.address}
+            onClick={() => {
+              onSelect(token);
+              onClose();
+            }}
+            sx={{ /* ... existing styles ... */ }}
+          >
+            <ListItemAvatar>
+              <Avatar
+                src={token.logoURI}
+                sx={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+              >
+                {token.symbol.charAt(0)}
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText
+              primary={<TokenName token={token} />}
+              secondary={
+                <Typography sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
+                  {token.name}
                 </Typography>
-              )}
-            </ListItemButton>
-          ))}
-        </List>
+              }
+            />
+            {tokensData[token.address]?.balance && (
+              <Typography sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                {formatUnits(
+                  tokensData[token.address].balance!,
+                  token.decimal
+                )}
+              </Typography>
+            )}
+          </ListItemButton>
+        ))}
+      </List>
 
         <Divider sx={{ my: 2, borderColor: "rgba(255, 255, 255, 0.1)" }} />
 
@@ -251,7 +227,7 @@ export const TokenSelectDialog = ({
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               fullWidth
-              placeholder='Token contract address'
+              placeholder="Token contract address"
               value={customAddress}
               onChange={(e) => setCustomAddress(e.target.value)}
               error={!!customTokenError}
@@ -264,7 +240,7 @@ export const TokenSelectDialog = ({
               }}
             />
             <Button
-              variant='contained'
+              variant="contained"
               onClick={handleLoadCustomToken}
               disabled={customTokenLoading || !customAddress}
               sx={{
@@ -290,10 +266,22 @@ export const TokenSelectDialog = ({
                 gap: 1,
               }}
             >
-              <Warning color='error' />
-              <Typography color='error'>{customTokenError}</Typography>
+              <Warning color="error" />
+              <Typography color="error">{customTokenError}</Typography>
             </Box>
           )}
+          <Typography
+            sx={{
+              color: "#ffb74d",
+              fontSize: "0.875rem",
+              mt: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            ⚠️ Custom tokens are unverified by default - Trade with caution
+          </Typography>
         </Box>
       </DialogContent>
     </Dialog>
