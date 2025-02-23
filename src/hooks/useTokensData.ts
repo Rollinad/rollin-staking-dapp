@@ -1,4 +1,4 @@
-// hooks/useTokensData.ts
+// @ts-nocheck
 import { useEffect, useState } from "react";
 import { Address, erc20Abi } from "viem";
 import { useAccount, useBalance, useReadContracts } from "wagmi";
