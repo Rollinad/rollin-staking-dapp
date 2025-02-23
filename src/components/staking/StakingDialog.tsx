@@ -25,8 +25,8 @@ import { useStakingContract } from "../../hooks/useStakingContract";
 import { formatUnits, parseUnits } from "viem";
 import { ErrorMessage, StakeData, StakingOption } from "../../types/staking";
 import { STAKING_CONTRACT_ADDRESS } from "../../constants";
-import { useStakingToken } from "@/hooks/useStakingToken";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "../../contexts/SnackbarContext";
+import { useStakingToken } from "../../hooks/useStakingToken";
 
 // Styled components
 const StyledDialog = styled(Dialog)(({ theme }) => ({

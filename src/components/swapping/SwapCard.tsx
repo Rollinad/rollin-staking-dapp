@@ -87,17 +87,17 @@ export const SwapCard = () => {
         sellToken.decimals
       ).toString();
 
-      const response = await fetch('/api/rollin-protocol/swap/price', {
-        method: 'POST',
+      const response = await fetch("/api/rollin-protocol/swap/price", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           sellToken: sellToken.address,
           buyToken: buyToken.address,
           sellAmount: sellAmountBase,
           takerAddress: address!,
-          chainId
+          chainId,
         }),
       });
 
@@ -124,7 +124,7 @@ export const SwapCard = () => {
     }, 500);
 
     return () => clearTimeout(debounce);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sellAmount, sellToken, buyToken]);
 
   const handleSwap = async () => {
@@ -139,17 +139,17 @@ export const SwapCard = () => {
         sellToken.decimals
       ).toString();
 
-      const response = await fetch('/api/rollin-protocol/swap/quote', {
-        method: 'POST',
+      const response = await fetch("/api/rollin-protocol/swap/quote", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           sellToken: sellToken.address,
           buyToken: buyToken.address,
           sellAmount: sellAmountBase,
           takerAddress: address!,
-          chainId
+          chainId,
         }),
       });
 
@@ -183,6 +183,7 @@ export const SwapCard = () => {
     "&:hover": {
       backgroundColor: "rgba(255, 255, 255, 0.2)",
     },
+    padding: "12px",
   };
 
   return (
@@ -238,7 +239,7 @@ export const SwapCard = () => {
                 },
                 "& .MuiInputBase-input": {
                   fontSize: "24px",
-                  padding: 0,
+                  padding: "12px",
                 },
               }}
             />
@@ -306,7 +307,7 @@ export const SwapCard = () => {
                 },
                 "& .MuiInputBase-input": {
                   fontSize: "24px",
-                  padding: 0,
+                  padding: "12px",
                 },
               }}
             />

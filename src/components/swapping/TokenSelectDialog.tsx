@@ -20,9 +20,9 @@ import {
 import { Search, Add, Warning } from "@mui/icons-material";
 import { erc20Abi, formatUnits, isAddress } from "viem";
 import type { Address } from "viem";
-import { ErrorMessage } from "@/types/staking";
-import { useTokensData } from "@/hooks/useTokensData";
 import { useReadContract } from "wagmi";
+import { useTokensData } from "../../hooks/useTokensData";
+import { ErrorMessage } from "../../types/staking";
 
 interface Token {
   symbol: string;

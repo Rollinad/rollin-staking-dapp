@@ -1,7 +1,7 @@
-import { TokenData } from "@/types/staking";
 import { useEffect, useState } from "react";
 import { Address, erc20Abi } from "viem";
 import { useAccount, useBalance, useReadContract } from "wagmi";
+import { TokenData } from "../types/staking";
 
 // Single token data hook
 export const useTokenData = (tokenAddress: Address) => {

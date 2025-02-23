@@ -21,8 +21,8 @@ import {
 } from '@mui/material';
 import { Search, Add } from '@mui/icons-material';
 import { erc20Abi, formatUnits, isAddress } from 'viem';
-import { useTokensData } from '@/hooks/useTokensData';
 import { useReadContract } from 'wagmi';
+import { useTokensData } from '../../hooks/useTokensData';
 
 interface Token {
   symbol: string;
