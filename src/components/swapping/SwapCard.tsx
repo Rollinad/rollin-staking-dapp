@@ -771,14 +771,14 @@ export const SwapCard = () => {
 
         {/* Token Selection Dialogs */}
         <TokenSelectDialog
-          availableTokens={tokens}
+          availableTokens={tokens.filter(token => token.address !== buyToken.address)}
           open={sellDialogOpen}
           onClose={() => setSellDialogOpen(false)}
           onSelect={setSellToken}
           selectedToken={sellToken}
         />
         <TokenSelectDialog
-          availableTokens={tokens}
+          availableTokens={tokens.filter(token => token.address !== sellToken.address)}
           open={buyDialogOpen}
           onClose={() => setBuyDialogOpen(false)}
           onSelect={setBuyToken}
