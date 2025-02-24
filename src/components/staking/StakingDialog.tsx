@@ -27,6 +27,7 @@ import { ErrorMessage, StakeData, StakingOption } from "../../types/staking";
 import { STAKING_CONTRACT_ADDRESS } from "../../constants";
 import { useSnackbar } from "../../contexts/SnackbarContext";
 import { useStakingToken } from "../../hooks/useStakingToken";
+import { useContractBalance } from "../../hooks/useContractBalance";
 
 // Styled components
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -196,6 +197,9 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     message: "",
     severity: "error",
   });
+  const [rewardError, setRewardError] = useState<string>("");
+
+  const { balance: contractBalance } = useContractBalance(address);
 
   const {
     name,
@@ -252,7 +256,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     if (error && error.open) {
       showSnackbar(error.message, error.severity);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
   useEffect(() => {
@@ -334,8 +338,20 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     }
   };
 
+  const handleOptionSelect = (option: StakingOption) => {
+    setSelectedOption(option);
+    if (amount) {
+      validateReward(option, amount);
+    }
+  };
+
   const handleStakeAction = async () => {
     if (!selectedOption || !amount) return;
+
+    if (tab === 0 && !validateReward(selectedOption, amount)) {
+      handleError(rewardError, "error");
+      return;
+    }
 
     const userStake = stakingData?.find(
       (s) => s.stakingOptionId === selectedOption.stakingOptionId
@@ -401,10 +417,28 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     }
   };
 
+  const validateReward = (option: StakingOption, inputAmount: string) => {
+    if (!inputAmount || !option || !contractBalance) return;
+
+    const potentialReward = calculatePotentialReward(option, inputAmount);
+    const contractBalanceNum = Number(formatUnits(BigInt(contractBalance), Number(decimals) || 18));
+
+    if (potentialReward > contractBalanceNum) {
+      setRewardError(`Potential reward (${potentialReward.toFixed(2)} ${symbol}) exceeds contract balance (${contractBalanceNum.toFixed(2)} ${symbol})`);
+      return false;
+    }
+
+    setRewardError("");
+    return true;
+  };
+
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setAmount(value);
+      if (selectedOption) {
+        validateReward(selectedOption, value);
+      }
       if (error.severity === "warning") {
         setError((prev) => ({ ...prev, open: false }));
       }
@@ -542,6 +576,19 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                   variant='outlined'
                 />
 
+                {rewardError && (
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: "#f44336",
+                      mt: 1,
+                      mb: 1,
+                    }}
+                  >
+                    {rewardError}
+                  </Typography>
+                )}
+
                 <Box>
                   <Typography
                     variant='subtitle2'
@@ -594,7 +641,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                           },
                           opacity: option.isActive ? 1 : 0.8,
                         }}
-                        onClick={() => setSelectedOption(option)}
+                        onClick={() => handleOptionSelect(option)}
                       >
                         <CardContent>
                           <Box
@@ -702,7 +749,12 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                 ) : (
                   <StyledButton
                     fullWidth
-                    disabled={!selectedOption || !amount || isPending}
+                    disabled={
+                      !selectedOption ||
+                      !amount ||
+                      isPending ||
+                      (tab === 0 && !!rewardError)
+                    }
                     onClick={handleStakeAction}
                   >
                     {isPending ? (
