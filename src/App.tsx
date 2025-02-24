@@ -1,43 +1,18 @@
 import { Box, Container, Typography, useMediaQuery } from "@mui/material";
-import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { useAccount } from "wagmi";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { PoolsList } from "./components/staking/PoolsList";
 import { CreatePool } from "./components/staking/CreatePool";
 import { CreateStakingOption } from "./components/staking/CreateStakingOption";
 import { Sidebar } from "./components/Sidebar";
-import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
+import { AnimatedBackground, customTheme } from "./styles/styled";
 
 const rollinStakingIcon = "/icon.png";
-
-const gradientAnimation = keyframes`
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-`;
-
-const AnimatedBackground = styled(Box)`
-  min-height: 100vh;
-  background: linear-gradient(
-    -45deg,
-    #9C27B0,
-    #673AB7,
-    #7B1FA2,
-    #4A148C
-  );
-  background-size: 400% 400%;
-  animation: ${gradientAnimation} 15s ease infinite;
-`;
 
 interface MainContentProps {
   sidebarCollapsed: boolean;
@@ -54,13 +29,6 @@ const MainContent = styled(Box, {
     width: '100%',
   },
 }));
-
-const customTheme = lightTheme({
-  accentColor: '#9C27B0',
-  accentColorForeground: 'white',
-  borderRadius: 'large',
-  overlayBlur: 'small',
-});
 
 export const App = () => {
   const { isConnected } = useAccount();
@@ -132,7 +100,7 @@ export const App = () => {
                       <Route path="create-pool" element={<CreatePool />} />
                       <Route path="create-option" element={<CreateStakingOption />} />
                     </Route>
-                    <Route path="/" element={<Navigate to="/stake" replace />} />
+                    <Route path="/" element={<Navigate to="/swap" replace />} />
                     <Route path="*" element={<Navigate to="/stake" replace />} />
                     <Route path="/swap" element={<SwapCard />} />
                   </Routes>

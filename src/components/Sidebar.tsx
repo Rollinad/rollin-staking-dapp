@@ -153,38 +153,6 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
       <SidebarContainer open={sidebarOpen}>
         <List sx={{ px: 1 }}>
           <StyledListItemButton
-            onClick={handleStakeClick}
-            selected={location.pathname.startsWith("/stake")}
-          >
-            <StyledListItemIcon>
-              <AccountBalanceWalletIcon />
-            </StyledListItemIcon>
-            {sidebarOpen && <StyledListItemText primary='Stake' />}
-            {sidebarOpen && (stakeOpen ? <ExpandLess /> : <ExpandMore />)}
-          </StyledListItemButton>
-          <Collapse in={stakeOpen && sidebarOpen} timeout='auto' unmountOnExit>
-            <List component='div' disablePadding>
-              <StyledSubListItemButton
-                selected={isCurrentRoute("/stake")}
-                onClick={() => handleNavigation("/stake")}
-              >
-                <StyledListItemText primary='Pools List' />
-              </StyledSubListItemButton>
-              <StyledSubListItemButton
-                selected={isCurrentRoute("/stake/create-pool")}
-                onClick={() => handleNavigation("/stake/create-pool")}
-              >
-                <StyledListItemText primary='Create Pool' />
-              </StyledSubListItemButton>
-              <StyledSubListItemButton
-                selected={isCurrentRoute("/stake/create-option")}
-                onClick={() => handleNavigation("/stake/create-option")}
-              >
-                <StyledListItemText primary='Create Staking Option' />
-              </StyledSubListItemButton>
-            </List>
-          </Collapse>
-          <StyledListItemButton
             onClick={() => handleNavigation("/swap")}
             selected={location.pathname.startsWith("/swap")}
           >
@@ -194,16 +162,86 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
             {sidebarOpen && (
               <StyledListItemText
                 primary='Swap'
-                // secondary='Coming Soon'
+                secondary='Exchange tokens'
                 sx={{
                   "& .MuiListItemText-secondary": {
                     color: "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.75rem",
+                    fontSize: "0.7rem",
                   },
                 }}
               />
             )}
           </StyledListItemButton>
+          <StyledListItemButton
+            onClick={handleStakeClick}
+            selected={location.pathname.startsWith("/stake")}
+          >
+            <StyledListItemIcon>
+              <AccountBalanceWalletIcon />
+            </StyledListItemIcon>
+            {sidebarOpen && (
+              <StyledListItemText
+                primary='Stake'
+                secondary='Earn reward'
+                sx={{
+                  "& .MuiListItemText-secondary": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: "0.7rem",
+                  },
+                }}
+              />
+            )}
+            {sidebarOpen && (stakeOpen ? <ExpandLess /> : <ExpandMore />)}
+          </StyledListItemButton>
+          <Collapse in={stakeOpen && sidebarOpen} timeout='auto' unmountOnExit>
+            <List component='div' disablePadding>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/stake")}
+                onClick={() => handleNavigation("/stake")}
+              >
+                <StyledListItemText
+                  primary='Pools List'
+                  secondary='Available Pools'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/stake/create-pool")}
+                onClick={() => handleNavigation("/stake/create-pool")}
+              >
+                <StyledListItemText
+                  primary='Create Pool'
+                  secondary='Create Own Staking Pool'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/stake/create-option")}
+                onClick={() => handleNavigation("/stake/create-option")}
+              >
+                <StyledListItemText
+                  primary='Create Staking Option'
+                  secondary='Create Option for Staking Pool'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+            </List>
+          </Collapse>
         </List>
       </SidebarContainer>
     </>
