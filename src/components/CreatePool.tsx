@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -7,14 +7,17 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import { useStakingContract } from "../hooks/useStakingContract";
 import { useSnackbar } from "../contexts/SnackbarContext";
-import { isAddress } from "viem";
+import { isAddress, formatEther } from "viem";
+import { ErrorMessage } from "@/types/staking";
 
 export const CreatePool = () => {
   const [tokenAddress, setTokenAddress] = useState("");
-  const { createPool, isPending, error } = useStakingContract();
+  const [balanceError, setBalanceError] = useState<string>("");
+  const { createPool, isPending, error, poolFee, validatePoolFee } = useStakingContract();
   const { showSnackbar } = useSnackbar();
 
   const commonInputStyles = {
@@ -45,6 +48,17 @@ export const CreatePool = () => {
     },
   };
 
+  useEffect(() => {
+    if (poolFee) {
+      const validation = validatePoolFee();
+      if (!validation.isValid) {
+        setBalanceError(validation.error || "");
+      } else {
+        setBalanceError("");
+      }
+    }
+  }, [poolFee, validatePoolFee]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAddress(tokenAddress)) {
@@ -52,13 +66,45 @@ export const CreatePool = () => {
       return;
     }
 
+    // Check balance before proceeding
+    const validation = validatePoolFee();
+    if (!validation.isValid) {
+      showSnackbar(validation.error || "Insufficient balance", "error");
+      return;
+    }
+
     try {
       await createPool(tokenAddress);
       showSnackbar("Pool created successfully!", "success");
       setTokenAddress("");
-    } catch {
-      showSnackbar(error?.message || "Failed to create pool", "error");
+    } catch (err) {
+      const error = err as ErrorMessage;
+      showSnackbar(error.message || "Failed to create pool", "error");
     }
+  };
+
+  const renderPoolFeeAlert = () => {
+    if (typeof poolFee === 'undefined') return null;
+    
+    const feeAmount = poolFee ? formatEther(poolFee as bigint) : '0';
+    
+    return (
+      <Alert 
+        severity={balanceError ? "error" : "info"}
+        sx={{ 
+          mb: 2,
+          backgroundColor: balanceError 
+            ? "rgba(211, 47, 47, 0.1)" 
+            : "rgba(33, 150, 243, 0.1)",
+          color: "white",
+          "& .MuiAlert-icon": {
+            color: balanceError ? "#f44336" : "#2196f3"
+          }
+        }}
+      >
+        {balanceError || `Pool creation fee: ${feeAmount} MON`}
+      </Alert>
+    );
   };
 
   return (
@@ -72,7 +118,7 @@ export const CreatePool = () => {
     >
       <CardContent>
         <Typography
-          variant='h5'
+          variant="h5"
           gutterBottom
           sx={{
             color: "#ffffff",
@@ -83,23 +129,26 @@ export const CreatePool = () => {
         >
           Create Staking Pool
         </Typography>
-        <Box component='form' onSubmit={handleSubmit}>
+
+        {renderPoolFeeAlert()}
+
+        <Box component="form" onSubmit={handleSubmit}>
           <TextField
             fullWidth
-            label='Token Address'
+            label="Token Address"
             value={tokenAddress}
             onChange={(e) => setTokenAddress(e.target.value)}
             disabled={isPending}
-            margin='normal'
+            margin="normal"
             required
             error={!!error}
             helperText={error?.message}
             sx={commonInputStyles}
           />
           <Button
-            variant='contained'
-            type='submit'
-            disabled={isPending || !tokenAddress}
+            variant="contained"
+            type="submit"
+            disabled={isPending || !tokenAddress || !!balanceError}
             fullWidth
             sx={{
               mt: 3,
@@ -114,7 +163,7 @@ export const CreatePool = () => {
             }}
           >
             {isPending ? (
-              <CircularProgress size={24} color='inherit' />
+              <CircularProgress size={24} color="inherit" />
             ) : (
               "Create Pool"
             )}

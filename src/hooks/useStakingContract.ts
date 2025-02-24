@@ -1,5 +1,6 @@
 import {
   useAccount,
+  useBalance,
   useReadContract,
   useSimulateContract,
   useWriteContract,
@@ -7,9 +8,13 @@ import {
 import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
 import { ErrorMessage, StakeData } from "../types/staking";
 import { useState } from "react";
+import { formatEther } from "viem";
 
 export function useStakingContract() {
   const { address: userAddress } = useAccount();
+  const { data: userBalance } = useBalance({
+    address: userAddress,
+  });
 
   const [createPoolParams, setCreatePoolParams] = useState<{
     tokenAddress: string;
@@ -43,6 +48,25 @@ export function useStakingContract() {
     abi: STAKING_CONTRACT_ABI,
     functionName: "getPoolFee",
   });
+
+  const validatePoolFee = (): { isValid: boolean; error?: string } => {
+    if (!userBalance?.value || !poolFee) {
+      return { isValid: false, error: "Unable to validate balance" };
+    }
+
+    // Ensure both values are BigInt for comparison
+    const balanceValue = userBalance.value;
+    const feeValue = poolFee as bigint;
+
+    if (balanceValue < feeValue) {
+      return {
+        isValid: false,
+        error: `Insufficient balance for pool fee. Required: ${formatEther(feeValue)} MON`,
+      };
+    }
+
+    return { isValid: true };
+  };
 
   const { writeContract, isPending, error } = useWriteContract();
 
@@ -96,6 +120,11 @@ export function useStakingContract() {
 
   const createPool = async (tokenAddress: string) => {
     try {
+      const validation = validatePoolFee();
+      if (!validation.isValid) {
+        throw new Error(validation.error);
+      }
+
       // Set params and wait for simulation to update
       setCreatePoolParams({ tokenAddress });
 
@@ -205,5 +234,7 @@ export function useStakingContract() {
     withdrawFrozen,
     isPending,
     error,
+    poolFee,
+    validatePoolFee
   };
 }
