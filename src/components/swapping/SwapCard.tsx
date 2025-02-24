@@ -10,14 +10,10 @@ import {
   TextField,
   CircularProgress,
   Paper,
-  Tooltip,
-  Avatar,
 } from "@mui/material";
 import {
   SwapVert,
   Settings,
-  KeyboardArrowDown,
-  VerifiedUser,
 } from "@mui/icons-material";
 import { useAccount } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
@@ -26,6 +22,9 @@ import { TokenSelectDialog } from "./TokenSelectDialog";
 import { ErrorMessage } from "../../types/staking";
 import { useTokens, Token } from "../../hooks/useTokens";
 import { useTokensData } from "../../hooks/useTokensData";
+import { UnverifiedTokenWarning } from "./UnverifiedTokenWarning";
+import { TokenButton } from "./TokenButton";
+import { cardStyle, tokenButtonStyle } from "./styles";
 
 export const SwapCard = () => {
   const { address, isConnected, chainId } = useAccount();
@@ -234,88 +233,6 @@ export const SwapCard = () => {
       setLoading(false);
     }
   };
-
-  // Styles
-  const cardStyle = {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    backdropFilter: "blur(10px)",
-    borderRadius: "16px",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-  };
-
-  const tokenButtonStyle = {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    backdropFilter: "blur(5px)",
-    color: "#fff",
-    "&:hover": {
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
-    },
-    padding: "12px",
-  };
-
-  // Token button component with verification badge
-  const TokenButton = ({
-    token,
-    onClick,
-  }: {
-    token: Token;
-    onClick: () => void;
-  }) => (
-    <Button
-      variant='contained'
-      sx={tokenButtonStyle}
-      endIcon={<KeyboardArrowDown />}
-      onClick={onClick}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {token.logoURI ? (
-          <img
-            src={token.logoURI}
-            alt={token.symbol}
-            style={{ width: 24, height: 24, borderRadius: "50%" }}
-          />
-        ) : (
-          <Avatar
-            src={token.logoURI}
-            sx={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-          >
-            {token.symbol.charAt(0)}
-          </Avatar>
-        )}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {token.symbol}
-          {token.verified && (
-            <Tooltip title='Verified Token'>
-              <VerifiedUser
-                sx={{
-                  fontSize: 16,
-                  color: "#00e676",
-                  ml: 0.5,
-                }}
-              />
-            </Tooltip>
-          )}
-        </Box>
-      </Box>
-    </Button>
-  );
-
-  // Warning message for unverified tokens
-  const UnverifiedTokenWarning = ({ token }: { token: Token }) =>
-    !token.verified && (
-      <Typography
-        sx={{
-          color: "#ffb74d",
-          fontSize: "0.875rem",
-          mt: 1,
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-        }}
-      >
-        ⚠️ Unverified token - Trade with caution
-      </Typography>
-    );
 
   if (tokensLoading || !sellToken || !buyToken) {
     return (
