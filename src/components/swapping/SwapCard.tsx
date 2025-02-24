@@ -1,4 +1,3 @@
-// SwapCard.tsx
 import { useState, useEffect, useMemo } from "react";
 import {
   Box,
@@ -19,25 +18,44 @@ import { useAccount } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
 import type { Address } from "viem";
 import { TokenSelectDialog } from "./TokenSelectDialog";
-import { ErrorMessage } from "../../types/staking";
 import { useTokens, Token } from "../../hooks/useTokens";
 import { useTokensData } from "../../hooks/useTokensData";
 import { UnverifiedTokenWarning } from "./UnverifiedTokenWarning";
 import { TokenButton } from "./TokenButton";
 import { cardStyle, tokenButtonStyle } from "./styles";
+import { use0x } from "../../hooks/use0x";
 
 export const SwapCard = () => {
-  const { address, isConnected, chainId } = useAccount();
+  // Account & Connection
+  const { isConnected } = useAccount();
+
+  // Token States
+  const { tokens, loading: tokensLoading } = useTokens();
   const [sellToken, setSellToken] = useState<Token>();
   const [buyToken, setBuyToken] = useState<Token>();
   const [sellAmount, setSellAmount] = useState("");
   const [buyAmount, setBuyAmount] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  // UI States
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [buyDialogOpen, setBuyDialogOpen] = useState(false);
+  const [error, setError] = useState("");
 
-  const { tokens, loading: tokensLoading } = useTokens();
+  // Initialize use0x hook
+  const {
+    getSwapQuote,
+    executeSwap,
+    isLoading,
+    isApproving,
+    error: swapError,
+  } = use0x();
+
+  // Set error state combining both local and swap errors
+  useEffect(() => {
+    if (swapError) {
+      setError(swapError);
+    }
+  }, [swapError]);
 
   // Set initial tokens
   useEffect(() => {
@@ -92,7 +110,6 @@ export const SwapCard = () => {
     const value = e.target.value;
     if (!sellToken) return;
 
-    // Allow empty string or numbers with up to token's decimal places
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [_, decimal] = value.split(".");
@@ -119,118 +136,49 @@ export const SwapCard = () => {
     setError("");
   };
 
-  // Fetch price quote from API
-  const fetchPrice = async () => {
-    if (
-      !sellAmount ||
-      !isConnected ||
-      isAmountExceedingBalance ||
-      !sellToken ||
-      !buyToken
-    )
-      return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const sellAmountBase = parseUnits(
-        sellAmount,
-        sellToken.decimal
-      ).toString();
-
-      const response = await fetch("/api/rollin-protocol/swap/price", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sellToken: sellToken.address,
-          buyToken: buyToken.address,
-          sellAmount: sellAmountBase,
-          takerAddress: address!,
-          chainId,
-        }),
-      });
-
-      const quote = await response.json();
-
-      if (!response.ok) {
-        throw new Error(quote.reason || "Failed to fetch price");
-      }
-
-      setBuyAmount(formatUnits(BigInt(quote.buyAmount), buyToken.decimal));
-    } catch (err) {
-      const error = err as ErrorMessage;
-      setError(error.message ?? "Error fetching price");
-      setBuyAmount("");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update price when inputs change
+  // Update quote when inputs change
   useEffect(() => {
-    const debounce = setTimeout(() => {
+    const fetchQuote = async () => {
+      if (!sellAmount || !isConnected || !sellToken || !buyToken) return;
+
       if (isAmountExceedingBalance) {
         setError("Insufficient balance");
         setBuyAmount("");
-      } else {
-        fetchPrice();
+        return;
       }
-    }, 500);
 
+      try {
+        const quote = await getSwapQuote(sellToken, buyToken, sellAmount);
+        if (quote.buyAmount) {
+          setBuyAmount(formatUnits(BigInt(quote.buyAmount), buyToken.decimal));
+          setError("");
+        } else {
+          setError("Invalid quote received");
+          setBuyAmount("");
+        }
+      } catch (err) {
+        setError((err as Error).message);
+        setBuyAmount("");
+      }
+    };
+
+    const debounce = setTimeout(fetchQuote, 500);
     return () => clearTimeout(debounce);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sellAmount, sellToken, buyToken, isAmountExceedingBalance]);
+  }, [sellAmount, sellToken, buyToken, isConnected, isAmountExceedingBalance, getSwapQuote, buyToken?.decimal]);
 
   // Handle swap execution
   const handleSwap = async () => {
-    if (
-      !isConnected ||
-      !sellAmount ||
-      isAmountExceedingBalance ||
-      !sellToken ||
-      !buyToken
-    )
-      return;
-
-    setLoading(true);
-    setError("");
+    if (!isConnected || !sellAmount || isAmountExceedingBalance || !sellToken || !buyToken) return;
 
     try {
-      const sellAmountBase = parseUnits(
-        sellAmount,
-        sellToken.decimal
-      ).toString();
-
-      const response = await fetch("/api/rollin-protocol/swap/quote", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sellToken: sellToken.address,
-          buyToken: buyToken.address,
-          sellAmount: sellAmountBase,
-          takerAddress: address!,
-          chainId,
-        }),
-      });
-
-      const quote = await response.json();
-
-      if (!response.ok) {
-        throw new Error(quote.reason || "Failed to fetch quote");
-      }
-
-      // TODO: Execute the swap transaction
-      console.log("Executing swap with quote:", quote);
+      await executeSwap(sellToken, buyToken, sellAmount);
+      
+      // Reset form after successful swap
+      setSellAmount("");
+      setBuyAmount("");
+      setError("");
     } catch (err) {
-      const error = err as ErrorMessage;
-      setError(error.message ?? "Error executing swap");
-    } finally {
-      setLoading(false);
+      setError((err as Error).message);
     }
   };
 
@@ -257,7 +205,7 @@ export const SwapCard = () => {
         {/* Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
           <Typography
-            variant='h5'
+            variant="h5"
             sx={{
               color: "#fff",
               fontWeight: "bold",
@@ -317,7 +265,7 @@ export const SwapCard = () => {
               fullWidth
               value={sellAmount}
               onChange={handleSellAmountChange}
-              placeholder='0'
+              placeholder="0"
               error={isAmountExceedingBalance}
               sx={{
                 "& .MuiInputBase-root": {
@@ -391,7 +339,7 @@ export const SwapCard = () => {
             <TextField
               fullWidth
               value={buyAmount}
-              placeholder='0'
+              placeholder="0"
               disabled
               sx={{
                 "& .MuiInputBase-root": {
@@ -418,7 +366,7 @@ export const SwapCard = () => {
         {/* Error Message */}
         {error && (
           <Typography
-            color='error'
+            color="error"
             sx={{
               mb: 2,
               color: "#ff6b6b",
@@ -434,10 +382,10 @@ export const SwapCard = () => {
         {/* Swap Button */}
         <Button
           fullWidth
-          variant='contained'
-          size='large'
+          variant="contained"
+          size="large"
           disabled={
-            !isConnected || loading || !sellAmount || isAmountExceedingBalance
+            !isConnected || isLoading || isApproving || !sellAmount || isAmountExceedingBalance
           }
           onClick={handleSwap}
           sx={{
@@ -447,8 +395,10 @@ export const SwapCard = () => {
             fontWeight: "bold",
           }}
         >
-          {loading ? (
+          {isLoading ? (
             <CircularProgress size={24} sx={{ color: "#fff" }} />
+          ) : isApproving ? (
+            "Approving..."
           ) : !isConnected ? (
             "Connect Wallet"
           ) : !sellAmount ? (
