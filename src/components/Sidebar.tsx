@@ -194,7 +194,7 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
             {sidebarOpen && (
               <StyledListItemText
                 primary='Swap'
-                secondary='Coming Soon'
+                // secondary='Coming Soon'
                 sx={{
                   "& .MuiListItemText-secondary": {
                     color: "rgba(255, 255, 255, 0.7)",

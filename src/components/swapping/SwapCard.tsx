@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Card,
@@ -33,6 +33,14 @@ import { use0x } from "../../hooks/use0x";
 
 // Define status type for the StatusChip
 type TradeStatus = 'submitted' | 'confirmed' | 'failed' | string;
+
+// Interface for cached token balances
+interface TokenBalanceCache {
+  [address: string]: {
+    balance: bigint;
+    timestamp: number;
+  };
+}
 
 // Status chip component for gasless swaps
 const StatusChip = ({ status }: { status: TradeStatus }) => {
@@ -94,6 +102,10 @@ export const SwapCard = () => {
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [buyDialogOpen, setBuyDialogOpen] = useState(false);
   const [error, setError] = useState("");
+  const [isSwapping, setIsSwapping] = useState(false); // Track when tokens are being swapped
+  
+  // Balance cache to preserve token balances during swaps
+  const balanceCacheRef = useRef<TokenBalanceCache>({});
   
   // Gasless feature states
   const [useGasless, setUseGasless] = useState(false);
@@ -150,23 +162,78 @@ export const SwapCard = () => {
 
   const tokensData = useTokensData(tokenAddresses);
 
-  // Get sell and buy token balances
+  // Update balance cache when tokensData changes
+  useEffect(() => {
+    const now = Date.now();
+    
+    // Update cache with new balances
+    Object.entries(tokensData).forEach(([address, data]) => {
+      if (data && data.balance !== undefined) {
+        balanceCacheRef.current[address.toLowerCase()] = {
+          balance: data.balance,
+          timestamp: now
+        };
+      }
+    });
+    
+    console.log("Cache updated:", balanceCacheRef.current);
+    console.log("Current tokensData:", tokensData);
+  }, [tokensData]);
+
+  // Get sell and buy token balances with fallbacks from cache
   const sellBalance = useMemo(() => {
     if (!sellToken) return undefined;
-    return tokensData[sellToken.address]?.balance;
+    
+    // Try accessing balance using normal address
+    let balance = tokensData[sellToken.address]?.balance;
+    
+    // If that fails, try with lowercase address
+    if (balance === undefined) {
+      const lowerAddress = sellToken.address.toLowerCase();
+      balance = tokensData[lowerAddress]?.balance;
+      
+      // If still undefined, try the cache
+      if (balance === undefined && balanceCacheRef.current[lowerAddress]) {
+        balance = balanceCacheRef.current[lowerAddress].balance;
+        console.log("Using cached balance for sell token:", balance.toString());
+      }
+    }
+    
+    return balance;
   }, [sellToken, tokensData]);
 
   const buyBalance = useMemo(() => {
     if (!buyToken) return undefined;
-    return tokensData[buyToken.address]?.balance;
+    
+    // Try accessing balance using normal address
+    let balance = tokensData[buyToken.address]?.balance;
+    
+    // If that fails, try with lowercase address
+    if (balance === undefined) {
+      const lowerAddress = buyToken.address.toLowerCase();
+      balance = tokensData[lowerAddress]?.balance;
+      
+      // If still undefined, try the cache
+      if (balance === undefined && balanceCacheRef.current[lowerAddress]) {
+        balance = balanceCacheRef.current[lowerAddress].balance;
+        console.log("Using cached balance for buy token:", balance.toString());
+      }
+    }
+    
+    return balance;
   }, [buyToken, tokensData]);
 
   // Format balance with maximum 6 decimal places
   const formatBalance = (balance: bigint, decimals: number) => {
-    const formatted = formatUnits(balance, decimals);
-    const [whole, decimal] = formatted.split(".");
-    if (!decimal) return whole;
-    return `${whole}.${decimal.slice(0, 6)}`;
+    try {
+      const formatted = formatUnits(balance, decimals);
+      const [whole, decimal] = formatted.split(".");
+      if (!decimal) return whole;
+      return `${whole}.${decimal.slice(0, 6)}`;
+    } catch (error) {
+      console.error("Error formatting balance:", error);
+      return "0"; // Fallback value
+    }
   };
 
   // Check if sell amount exceeds balance
@@ -212,12 +279,19 @@ export const SwapCard = () => {
     }
   };
 
-  // Swap tokens positions
+  // Swap tokens positions with improved data handling
   const handleSwapTokens = () => {
     if (!sellToken || !buyToken) return;
     
-    setSellToken(buyToken);
-    setBuyToken(sellToken);
+    setIsSwapping(true); // Start token swap - prevent balance display during transition
+    
+    // Store current tokens before swapping
+    const tempSellToken = sellToken;
+    const tempBuyToken = buyToken;
+    
+    // Perform the swap
+    setSellToken(tempBuyToken);
+    setBuyToken(tempSellToken);
     setSellAmount("");
     setBuyAmount("");
     setError("");
@@ -231,6 +305,11 @@ export const SwapCard = () => {
         setStatusUpdateInterval(null);
       }
     }
+    
+    // Set a timeout to ensure tokensData has time to update
+    setTimeout(() => {
+      setIsSwapping(false);
+    }, 500);
   };
 
   // Toggle gasless mode
@@ -447,7 +526,8 @@ export const SwapCard = () => {
               You pay
             </Typography>
             <Box sx={{ textAlign: "right" }}>
-              {sellBalance && (
+              {/* This is the fixed balance display for sell token */}
+              {sellToken && (
                 <Typography
                   sx={{
                     color: isAmountExceedingBalance
@@ -455,10 +535,12 @@ export const SwapCard = () => {
                       : "rgba(255, 255, 255, 0.6)",
                   }}
                 >
-                  Balance: {formatBalance(sellBalance, sellToken.decimal)}
+                  Balance: {isSwapping ? "Loading..." : (sellBalance !== undefined 
+                    ? formatBalance(sellBalance, sellToken.decimal) 
+                    : "Loading...")}
                 </Typography>
               )}
-              {sellBalance && sellBalance > 0n && (
+              {!isSwapping && sellBalance !== undefined && sellBalance > 0n && (
                 <Typography
                   sx={{
                     color: "rgba(255, 255, 255, 0.4)",
@@ -482,7 +564,7 @@ export const SwapCard = () => {
               onChange={handleSellAmountChange}
               placeholder="0"
               error={isAmountExceedingBalance}
-              disabled={!!tradeStatus && tradeStatus === 'submitted'}
+              disabled={!!tradeStatus && tradeStatus === 'submitted' || isSwapping}
               sx={{
                 "& .MuiInputBase-root": {
                   color: "#fff",
@@ -500,7 +582,8 @@ export const SwapCard = () => {
             <TokenButton
               token={sellToken}
               onClick={() => setSellDialogOpen(true)}
-              disabled={!!tradeStatus && tradeStatus === 'submitted'}
+              disabled={!!tradeStatus && tradeStatus === 'submitted' || isSwapping}
+              loading={isSwapping}
             />
           </Box>
           <UnverifiedTokenWarning token={sellToken} />
@@ -535,7 +618,7 @@ export const SwapCard = () => {
         <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
           <IconButton
             onClick={handleSwapTokens}
-            disabled={!!tradeStatus && tradeStatus === 'submitted'}
+            disabled={!!tradeStatus && tradeStatus === 'submitted' || isSwapping}
             sx={{
               color: "#fff",
               backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -544,7 +627,11 @@ export const SwapCard = () => {
               },
             }}
           >
-            <SwapVert />
+            {isSwapping ? (
+              <CircularProgress size={24} sx={{ color: "#fff" }} />
+            ) : (
+              <SwapVert />
+            )}
           </IconButton>
         </Box>
 
@@ -561,9 +648,12 @@ export const SwapCard = () => {
             <Typography sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
               You receive
             </Typography>
-            {buyBalance && (
+            {/* Buy token balance display */}
+            {buyToken && (
               <Typography sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                Balance: {formatBalance(buyBalance, buyToken.decimal)}
+                Balance: {isSwapping ? "Loading..." : (buyBalance !== undefined 
+                  ? formatBalance(buyBalance, buyToken.decimal) 
+                  : "Loading...")}
               </Typography>
             )}
           </Box>
@@ -590,7 +680,8 @@ export const SwapCard = () => {
             <TokenButton
               token={buyToken}
               onClick={() => setBuyDialogOpen(true)}
-              disabled={!!tradeStatus && tradeStatus === 'submitted'}
+              disabled={!!tradeStatus && tradeStatus === 'submitted' || isSwapping}
+              loading={isSwapping}
             />
           </Box>
           <UnverifiedTokenWarning token={buyToken} />
@@ -646,7 +737,8 @@ export const SwapCard = () => {
             !sellAmount || 
             isAmountExceedingBalance || 
             (tradeStatus === 'submitted') ||
-            (useGasless && !isGaslessCompatible)
+            (useGasless && !isGaslessCompatible) ||
+            isSwapping
           }
           onClick={handleSwap}
           sx={{
@@ -660,6 +752,8 @@ export const SwapCard = () => {
             <CircularProgress size={24} sx={{ color: "#fff" }} />
           ) : isApproving ? (
             "Approving..."
+          ) : isSwapping ? (
+            "Loading Tokens..."
           ) : !isConnected ? (
             "Connect Wallet"
           ) : !sellAmount ? (
