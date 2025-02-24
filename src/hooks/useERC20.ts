@@ -1,7 +1,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { formatUnits, erc20Abi } from 'viem'
-import { STAKING_CONTRACT_ADDRESS } from '@/constants'
 import { useEffect } from 'react'
+import { STAKING_CONTRACT_ADDRESS } from '../constants'
 
 export function useERC20(address: `0x${string}`) {
   const { address: accountAddress } = useAccount()
@@ -62,6 +62,7 @@ export function useERC20(address: `0x${string}`) {
     if (!writeContract) return
     
     try {
+      // @ts-ignore
       const hash = await writeContract({
         address,
         abi: erc20Abi,

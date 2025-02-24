@@ -19,4 +19,10 @@ export default defineConfig({
     },
     assetsInlineLimit: 0,
   },
+  server: {
+    proxy: {
+      // Proxy API requests to Next.js API
+      "/api": "http://localhost:3000",
+    },
+  },
 })

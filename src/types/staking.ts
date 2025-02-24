@@ -20,3 +20,10 @@ export interface ErrorMessage {
   message?: string;
   details?: string[];
 }
+
+export interface TokenData {
+  balance?: bigint;
+  symbol?: string;
+  name?: string;
+  decimals?: number;
+}

@@ -1,7 +1,6 @@
-// hooks/useStakingPoolTVL.ts
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "@/constants";
-import { StakingOption } from "@/types/staking";
 import { useAccount, useReadContract } from "wagmi";
+import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
+import { StakingOption } from "../types/staking";
 
 export function useStakingToken(tokenAddress: `0x${string}`) {
   const { address: userAddress } = useAccount();

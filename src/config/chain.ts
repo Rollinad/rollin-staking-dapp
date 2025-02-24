@@ -7,7 +7,7 @@ const monadTestnetPrivate = {
   id: 10143,
   name: 'Monad Testnet',
   network: 'monad-testnet',
-  iconUrl: "https://img.notionusercontent.com/s3/prod-files-secure%2F8b536fe4-3bbf-45fc-b661-190b80c94bea%2Fc10731c3-532e-45cc-bc2c-2f9557a27366%2FMonad_Logo_-_Inverted_-_Logo_Mark.png/size/w=140?exp=1740330083&sig=KD0soUmFpSvFRyPjv0NQhhvL7ZBzVWnb574uhTzy_aI",
+  iconUrl: "https://imagedelivery.net/cBNDGgkrsEA-b_ixIp9SkQ/MON.png/public",
   nativeCurrency: {
     decimals: 18,
     name: 'MON',
