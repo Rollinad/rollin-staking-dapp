@@ -125,7 +125,7 @@ export const use0x = () => {
       ).toString();
 
       // Determine which API endpoint to use based on useGasless flag
-      const apiPath = useGasless ? "/api/rollin-protocol/gasless/quote" : "/api/rollin-protocol/swap/quote";
+      const apiPath = useGasless ? "/api/rollin-protocol/gas-less/quote" : "/api/rollin-protocol/swap/quote";
 
       const response = await fetch(apiPath, {
         method: "POST",
@@ -356,7 +356,7 @@ export const use0x = () => {
     }
 
     // Submit to our API endpoint which will forward to 0x
-    const response = await fetch("/api/rollin-protocol/gasless/submit", {
+    const response = await fetch("/api/rollin-protocol/gas-less/submit", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -381,7 +381,7 @@ export const use0x = () => {
     tradeHash: string
   ) => {
     try {
-      const response = await fetch(`/api/rollin-protocol/gasless/status?tradeHash=${tradeHash}&chainId=${chainId}`, {
+      const response = await fetch(`/api/rollin-protocol/gas-less/status?tradeHash=${tradeHash}&chainId=${chainId}`, {
         method: "GET",
       });
 

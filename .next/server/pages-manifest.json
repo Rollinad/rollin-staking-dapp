@@ -2,5 +2,5 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/api/rollin-protocol/swap/quote": "pages/api/rollin-protocol/swap/quote.js"
+  "/api/rollin-protocol/gas-less/quote": "pages/api/rollin-protocol/gas-less/quote.js"
 }
