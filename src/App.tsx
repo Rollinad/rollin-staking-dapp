@@ -11,6 +11,7 @@ import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
 import { AnimatedBackground, customTheme } from "./styles/styled";
+import { TradeAnalytics } from "./components/analytic/TradeAnalytic";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -103,6 +104,7 @@ export const App = () => {
                     <Route path="/" element={<Navigate to="/swap" replace />} />
                     <Route path="*" element={<Navigate to="/stake" replace />} />
                     <Route path="/swap" element={<SwapCard />} />
+                    <Route path="/analytics" element={<TradeAnalytics />} />
                   </Routes>
                 </Box>
               </>

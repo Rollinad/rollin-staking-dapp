@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 import {
   SwapVert,
-  Settings,
   LocalGasStation,
   Info as InfoIcon,
 } from "@mui/icons-material";
@@ -474,7 +473,6 @@ export const SwapCard = () => {
               fontWeight: "bold",
             }}
           >
-            Swap
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Tooltip title={isGaslessCompatible 
@@ -506,9 +504,6 @@ export const SwapCard = () => {
                 sx={{ mr: 1, color: 'white' }}
               />
             </Tooltip>
-            <IconButton sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
-              <Settings />
-            </IconButton>
           </Box>
         </Box>
 

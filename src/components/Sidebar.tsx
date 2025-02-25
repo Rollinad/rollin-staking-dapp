@@ -17,6 +17,7 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Assessment } from "@mui/icons-material";
 
 interface SidebarContainerProps {
   open: boolean;
@@ -163,6 +164,26 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
               <StyledListItemText
                 primary='Swap'
                 secondary='Exchange tokens'
+                sx={{
+                  "& .MuiListItemText-secondary": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: "0.7rem",
+                  },
+                }}
+              />
+            )}
+          </StyledListItemButton>
+          <StyledListItemButton
+            onClick={() => handleNavigation("/analytics")}
+            selected={location.pathname.startsWith("/analytics")}
+          >
+            <StyledListItemIcon>
+              <Assessment />
+            </StyledListItemIcon>
+            {sidebarOpen && (
+              <StyledListItemText
+                primary='Analytics'
+                secondary='Trade History'
                 sx={{
                   "& .MuiListItemText-secondary": {
                     color: "rgba(255, 255, 255, 0.7)",
