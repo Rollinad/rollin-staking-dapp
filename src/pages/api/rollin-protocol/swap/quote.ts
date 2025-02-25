@@ -32,7 +32,7 @@ export default async function handler(
       sellAmount: data.sellAmount,
       taker: data.takerAddress,
       chainId: data.chainId,
-      tradeSurplusRecipient: "0xfBD2C25Eb46e291188dA794B679503CCB61D7EbF"
+      tradeSurplusRecipient: import.meta.env.VITE_0X_SURPLUS_RECIPIENT,
     });
 
     const response = await fetch(
