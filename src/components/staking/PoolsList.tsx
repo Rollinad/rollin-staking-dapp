@@ -29,9 +29,17 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
   const { name, symbol, decimals } = useERC20(address);
   const { tvl } = useStakingToken(address);
 
-  const formattedTVL = tvl
-    ? formatUnits(BigInt(tvl), Number(decimals) || 18)
-    : "0";
+  if (!tvl || !name || !symbol || !decimals) {
+    return (
+      <TableRow>
+        <TableCell colSpan={5} sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+          Loading pool data...
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  const formattedTVL = formatUnits(BigInt(tvl), Number(decimals) || 18);
 
   return (
     <>
@@ -73,6 +81,7 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
     </>
   );
 };
+
 
 export const PoolsList = () => {
   const { data: pools, isLoading } = useReadContract({
