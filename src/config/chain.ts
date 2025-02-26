@@ -14,8 +14,8 @@ const monadTestnetPrivate = {
     symbol: 'MON',
   },
   rpcUrls: {
-    public: { http: ['https://testnet-rpc2.monad.xyz/52227f026fa8fac9e2014c58fbf5643369b3bfc6'] },
-    default: { http: ['https://testnet-rpc2.monad.xyz/52227f026fa8fac9e2014c58fbf5643369b3bfc6'] },
+    public: { http: ['https://testnet-rpc.monad.xyz'] },
+    default: { http: ['https://testnet-rpc.monad.xyz'] },
   },
   blockExplorers: {
     default: { name: 'MonadExplorer', url: 'https://testnet.monadexplorer.com' },

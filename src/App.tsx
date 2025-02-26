@@ -11,6 +11,13 @@ import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
 import { AnimatedBackground, customTheme } from "./styles/styled";
+import { CreateProposal } from "./components/funding/CreateProposal";
+import { MyProposals } from "./components/funding/MyProposals";
+import { ProposalDetail } from "./components/funding/proposal-detail/ProposalDetail";
+import { MyContributions } from "./components/funding/MyContribution";
+import { ProposalList } from "./components/funding/ProposalList";
+
+// Import new DAO Funding components
 
 const rollinStakingIcon = "/icon.png";
 
@@ -31,8 +38,9 @@ const MainContent = styled(Box, {
 }));
 
 export const App = () => {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
   const isMobile = useMediaQuery('(max-width:600px)');
 
   useEffect(() => {
@@ -40,6 +48,19 @@ export const App = () => {
       setSidebarCollapsed(true);
     }
   }, [isMobile]);
+
+  // Check if user is registered
+  useEffect(() => {
+    const checkUserRegistration = async () => {
+      if (isConnected && address) {
+        // This will need to be implemented with your contract integration
+        // For now, we'll just set it to false
+        setIsRegistered(false);
+      }
+    };
+    
+    checkUserRegistration();
+  }, [isConnected, address]);
 
   const handleSidebarCollapse = (collapsed: boolean) => {
     setSidebarCollapsed(collapsed);
@@ -63,7 +84,7 @@ export const App = () => {
                 display: "flex", 
                 alignItems: "center", 
                 gap: 2,
-                ml: { xs: 5, sm: 6 } // Add margin to move logo and title right
+                ml: { xs: 5, sm: 6 }
               }}>
                 <img
                   src={rollinStakingIcon}
@@ -80,13 +101,13 @@ export const App = () => {
                     fontWeight: "bold",
                     textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
                     fontSize: {
-                      xs: '1.5rem',    // 24px for mobile
-                      sm: '2rem',      // 32px for tablet
-                      md: '2.125rem',  // 34px (default h4 size)
+                      xs: '1.5rem',
+                      sm: '2rem',
+                      md: '2.125rem',
                     },
                   }}
                 >
-                  Rollin Staking
+                  Rollin Platform
                 </Typography>
               </Box>
               <CustomConnectButton />
@@ -95,14 +116,31 @@ export const App = () => {
               <>
                 <Box sx={{ mt: 3 }}>
                   <Routes>
+                    {/* Existing Staking Routes */}
                     <Route path="/stake">
                       <Route index element={<PoolsList />} />
                       <Route path="create-pool" element={<CreatePool />} />
                       <Route path="create-option" element={<CreateStakingOption />} />
                     </Route>
+                    
+                    {/* Swap Route */}
+                    <Route path="/swap" element={<SwapCard />} />
+                    
+                    {/* New DAO Funding Routes */}
+                    <Route path="/funding">
+                      <Route index element={<ProposalList />} />
+                      <Route path="my-proposals" element={<MyProposals />} />
+                      {/* <Route path="create" element={
+                        isRegistered ? <CreateProposal /> : <UserRegistration />
+                      } /> */}
+                      <Route path="detail/:id" element={<ProposalDetail />} />
+                      <Route path="contributions" element={<MyContributions />} />
+                      {/* <Route path="register" element={<UserRegistration />} /> */}
+                    </Route>
+                    
+                    {/* Default routes */}
                     <Route path="/" element={<Navigate to="/swap" replace />} />
                     <Route path="*" element={<Navigate to="/stake" replace />} />
-                    <Route path="/swap" element={<SwapCard />} />
                   </Routes>
                 </Box>
               </>
