@@ -198,6 +198,8 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     severity: "error",
   });
   const [rewardError, setRewardError] = useState<string>("");
+  const [balanceError, setBalanceError] = useState<string>("");
+  const [unstakeError, setUnstakeError] = useState<string>("");
 
   const { balance: contractBalance } = useContractBalance(address);
 
@@ -252,6 +254,58 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     return formatUnits(total, Number(decimals) || 18);
   };
 
+  // Validate amount against user's balance
+  const validateAmount = (inputAmount: string): boolean => {
+    if (!inputAmount || tab !== 0) {
+      setBalanceError("");
+      return true;
+    }
+    
+    try {
+      const amountNum = Number(inputAmount);
+      const balanceNum = Number(balance);
+      
+      if (amountNum > balanceNum) {
+        const errorMsg = `Amount exceeds your available balance (${balanceNum.toLocaleString()} ${symbol})`;
+        setBalanceError(errorMsg);
+        handleError(errorMsg, "warning");
+        return false;
+      }
+      
+      setBalanceError("");
+      return true;
+    } catch (error) {
+      console.error("Error validating amount:", error);
+      return false;
+    }
+  };
+
+  // Validate unstake amount against the user's staked amount
+  const validateUnstakeAmount = (inputAmount: string): boolean => {
+    if (!inputAmount || !selectedOption || tab !== 1) {
+      setUnstakeError("");
+      return true;
+    }
+
+    try {
+      const amountNum = Number(inputAmount);
+      const stakedAmountNum = Number(stakedAmount);
+
+      if (amountNum > stakedAmountNum) {
+        const errorMsg = `Amount exceeds your staked amount (${stakedAmountNum.toLocaleString()} ${symbol})`;
+        setUnstakeError(errorMsg);
+        handleError(errorMsg, "warning");
+        return false;
+      }
+
+      setUnstakeError("");
+      return true;
+    } catch (error) {
+      console.error("Error validating unstake amount:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (error && error.open) {
       showSnackbar(error.message, error.severity);
@@ -266,6 +320,11 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
         selectedOption
       );
       setStakedAmount(formattedAmount);
+      
+      // Validate any existing amount entry against the new staked amount
+      if (amount && tab === 1) {
+        validateUnstakeAmount(amount);
+      }
     } catch (error) {
       console.error("Error in staked amount calculation:", error);
       setStakedAmount("0");
@@ -317,10 +376,18 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     setTab(newValue);
     setSelectedOption(undefined);
     setAmount("");
+    setBalanceError("");
+    setRewardError("");
+    setUnstakeError("");
   };
 
   const handleApprove = async () => {
     if (!amount) return;
+
+    // Validate amount before approving
+    if (!validateAmount(amount)) {
+      return;
+    }
 
     try {
       setIsApproving(true);
@@ -340,17 +407,38 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
 
   const handleOptionSelect = (option: StakingOption) => {
     setSelectedOption(option);
+    
+    // Reset unstake error when selecting a new option
+    setUnstakeError("");
+    
     if (amount) {
-      validateReward(option, amount);
+      if (tab === 0) {
+        validateReward(option, amount);
+      } else if (tab === 1) {
+        // When we select a new option in unstake tab, validate if the amount is valid for this option
+        validateUnstakeAmount(amount);
+      }
     }
   };
 
   const handleStakeAction = async () => {
     if (!selectedOption || !amount) return;
 
-    if (tab === 0 && !validateReward(selectedOption, amount)) {
-      handleError(rewardError, "error");
-      return;
+    // For staking tab, validate amount and reward
+    if (tab === 0) {
+      if (!validateAmount(amount)) {
+        return;
+      }
+      
+      if (!validateReward(selectedOption, amount)) {
+        handleError(rewardError, "error");
+        return;
+      }
+    } else if (tab === 1) {
+      // For unstaking tab, validate unstake amount
+      if (!validateUnstakeAmount(amount)) {
+        return;
+      }
     }
 
     const userStake = stakingData?.find(
@@ -393,6 +481,13 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
 
   const handleFrozenUnstake = async () => {
     if (!selectedOption || !amount) return;
+    
+    // Validate unstake amount before proceeding with frozen unstake
+    if (!validateUnstakeAmount(amount)) {
+      setConfirmDialogOpen(false);
+      return;
+    }
+    
     try {
       await unstakeFreeze(
         address,
@@ -418,7 +513,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
   };
 
   const validateReward = (option: StakingOption, inputAmount: string) => {
-    if (!inputAmount || !option || !contractBalance) return;
+    if (!inputAmount || !option || !contractBalance) return false;
 
     const potentialReward = calculatePotentialReward(option, inputAmount);
     const contractBalanceNum = Number(formatUnits(BigInt(contractBalance), Number(decimals) || 18));
@@ -436,10 +531,22 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     const value = event.target.value;
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setAmount(value);
-      if (selectedOption) {
-        validateReward(selectedOption, value);
+      
+      if (tab === 0) {
+        // Validate amount against balance for staking tab
+        validateAmount(value);
+        
+        // Continue with reward validation if option is selected
+        if (selectedOption) {
+          validateReward(selectedOption, value);
+        }
+      } else if (tab === 1) {
+        // Validate unstake amount for unstaking tab
+        validateUnstakeAmount(value);
       }
-      if (error.severity === "warning") {
+      
+      // Clear previous warning errors
+      if (error.severity === "warning" && !balanceError && !unstakeError) {
         setError((prev) => ({ ...prev, open: false }));
       }
     }
@@ -574,20 +681,12 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                   value={amount}
                   onChange={handleAmountChange}
                   variant='outlined'
+                  error={!!balanceError || !!rewardError || !!unstakeError}
+                  helperText={balanceError || rewardError || unstakeError}
+                  FormHelperTextProps={{
+                    sx: { color: "#f44336" }
+                  }}
                 />
-
-                {rewardError && (
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      color: "#f44336",
-                      mt: 1,
-                      mb: 1,
-                    }}
-                  >
-                    {rewardError}
-                  </Typography>
-                )}
 
                 <Box>
                   <Typography
@@ -737,7 +836,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                 {tab === 0 && needsApproval ? (
                   <StyledButton
                     fullWidth
-                    disabled={!selectedOption || !amount || isApproving}
+                    disabled={!selectedOption || !amount || isApproving || !!balanceError}
                     onClick={handleApprove}
                   >
                     {isApproving ? (
@@ -753,7 +852,8 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                       !selectedOption ||
                       !amount ||
                       isPending ||
-                      (tab === 0 && !!rewardError)
+                      (tab === 0 && (!!rewardError || !!balanceError)) ||
+                      (tab === 1 && !!unstakeError)
                     }
                     onClick={handleStakeAction}
                   >
@@ -799,7 +899,6 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
           <StyledButton
             onClick={async () => {
               await handleFrozenUnstake();
-              setConfirmDialogOpen(false);
             }}
             sx={{
               background: "linear-gradient(45deg, #f44336 30%, #d32f2f 90%)",

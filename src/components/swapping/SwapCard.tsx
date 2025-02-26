@@ -132,7 +132,7 @@ export const SwapCard = () => {
 
   // Set initial tokens
   useEffect(() => {
-    if (tokens.length >= 2 && !sellToken && !buyToken) {
+    if (tokens?.length >= 2 && !sellToken && !buyToken) {
       const ethToken = tokens.find(token => 
         token.symbol.toLowerCase() === 'eth' || 
         token.address.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
