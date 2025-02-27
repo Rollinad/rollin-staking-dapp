@@ -14,7 +14,10 @@ import {
 } from "@mui/material";
 import { useReadContract } from "wagmi";
 import { useERC20 } from "../../hooks/useERC20";
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../../constants";
+import {
+  STAKING_CONTRACT_ABI,
+  STAKING_CONTRACT_ADDRESS,
+} from "../../constants";
 import { formatUnits } from "viem";
 import { useStakingToken } from "../../hooks/useStakingToken";
 import { StakingDialog } from "./StakingDialog";
@@ -27,12 +30,12 @@ interface PoolItemProps {
 const PoolItem = ({ index, address }: PoolItemProps) => {
   const [isStakingOpen, setIsStakingOpen] = useState(false);
   const { name, symbol, decimals } = useERC20(address);
-  const { tvl } = useStakingToken(address);
+  const { tvl, reward } = useStakingToken(address);
 
-  if (!tvl || !name || !symbol || !decimals) {
+  if (!tvl || !name || !symbol || !decimals || !reward) {
     return (
       <TableRow>
-        <TableCell colSpan={5} sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+        <TableCell colSpan={6} sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
           Loading pool data...
         </TableCell>
       </TableRow>
@@ -40,19 +43,31 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
   }
 
   const formattedTVL = formatUnits(BigInt(tvl), Number(decimals) || 18);
+  const formattedReward = formatUnits(BigInt(reward), Number(decimals) || 18);
 
   return (
     <>
-      <TableRow sx={{
-        '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        },
-      }}>
-        <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>{index + 1}</TableCell>
-        <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>{name || "Unknown Token"}</TableCell>
-        <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>{symbol || "???"}</TableCell>
-        <TableCell sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+      <TableRow
+        sx={{
+          "&:hover": {
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+          },
+        }}
+      >
+        <TableCell sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+          {index + 1}
+        </TableCell>
+        <TableCell sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+          {name || "Unknown Token"}
+        </TableCell>
+        <TableCell sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+          {symbol || "???"}
+        </TableCell>
+        <TableCell sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
           {Number(formattedTVL).toLocaleString()} {symbol}
+        </TableCell>
+        <TableCell sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+          {Number(formattedReward).toLocaleString()} {symbol}
         </TableCell>
         <TableCell>
           <Button
@@ -60,11 +75,11 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
             size='small'
             onClick={() => setIsStakingOpen(true)}
             sx={{
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(5px)',
-              color: '#fff',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              backdropFilter: "blur(5px)",
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
               },
             }}
           >
@@ -82,7 +97,6 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
   );
 };
 
-
 export const PoolsList = () => {
   const { data: pools, isLoading } = useReadContract({
     address: STAKING_CONTRACT_ADDRESS,
@@ -91,17 +105,17 @@ export const PoolsList = () => {
   }) as { data: `0x${string}`[] | undefined; isLoading: boolean };
 
   const cardStyle = {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backdropFilter: "blur(10px)",
+    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
   };
 
   if (isLoading) {
     return (
       <Card sx={cardStyle}>
         <CardContent>
-          <Typography sx={{ color: '#fff' }}>Loading pools...</Typography>
+          <Typography sx={{ color: "#fff" }}>Loading pools...</Typography>
         </CardContent>
       </Card>
     );
@@ -111,7 +125,7 @@ export const PoolsList = () => {
     return (
       <Card sx={cardStyle}>
         <CardContent>
-          <Typography sx={{ color: '#fff' }}>No pools found</Typography>
+          <Typography sx={{ color: "#fff" }}>No pools found</Typography>
         </CardContent>
       </Card>
     );
@@ -120,55 +134,84 @@ export const PoolsList = () => {
   return (
     <Card sx={cardStyle}>
       <CardContent>
-        <Typography 
-          variant='h5' 
-          gutterBottom 
-          sx={{ 
-            color: '#fff',
-            fontWeight: 'bold',
+        <Typography
+          variant='h5'
+          gutterBottom
+          sx={{
+            color: "#fff",
+            fontWeight: "bold",
             mb: 3,
           }}
         >
           Staking Pools
         </Typography>
-        <TableContainer 
-          component={Paper} 
+        <TableContainer
+          component={Paper}
           sx={{
-            backgroundColor: 'transparent',
-            '& .MuiPaper-root': {
-              backgroundColor: 'transparent',
-              boxShadow: 'none',
+            backgroundColor: "transparent",
+            "& .MuiPaper-root": {
+              backgroundColor: "transparent",
+              boxShadow: "none",
             },
           }}
         >
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ 
-                  color: '#fff', 
-                  fontWeight: 'bold',
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-                }}>#</TableCell>
-                <TableCell sx={{ 
-                  color: '#fff', 
-                  fontWeight: 'bold',
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-                }}>Token Name</TableCell>
-                <TableCell sx={{ 
-                  color: '#fff', 
-                  fontWeight: 'bold',
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-                }}>Token Symbol</TableCell>
-                <TableCell sx={{ 
-                  color: '#fff', 
-                  fontWeight: 'bold',
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-                }}>TVL</TableCell>
-                <TableCell sx={{ 
-                  color: '#fff', 
-                  fontWeight: 'bold',
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-                }}>Action</TableCell>
+                <TableCell
+                  sx={{
+                    color: "#fff",
+                    fontWeight: "bold",
+                    borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  #
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "#fff",
+                    fontWeight: "bold",
+                    borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  Token Name
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "#fff",
+                    fontWeight: "bold",
+                    borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  Token Symbol
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "#fff",
+                    fontWeight: "bold",
+                    borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  TVL
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "#fff",
+                    fontWeight: "bold",
+                    borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  Reward Available
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "#fff",
+                    fontWeight: "bold",
+                    borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                >
+                  Action
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

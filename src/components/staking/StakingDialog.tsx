@@ -28,6 +28,15 @@ import { STAKING_CONTRACT_ADDRESS } from "../../constants";
 import { useSnackbar } from "../../contexts/SnackbarContext";
 import { useStakingToken } from "../../hooks/useStakingToken";
 import { useContractBalance } from "../../hooks/useContractBalance";
+import { useWaitForTransactionReceipt } from "wagmi";
+
+// Transaction Types
+type TransactionType =
+  | "approve"
+  | "stake"
+  | "unstake"
+  | "unstakeFreeze"
+  | "withdrawFrozen";
 
 // Styled components
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -201,6 +210,14 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
   const [balanceError, setBalanceError] = useState<string>("");
   const [unstakeError, setUnstakeError] = useState<string>("");
 
+  // Transaction tracking states
+  const [pendingTxType, setPendingTxType] = useState<TransactionType | null>(
+    null
+  );
+  const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+
+  const { showSnackbar } = useSnackbar();
+
   const { balance: contractBalance } = useContractBalance(address);
 
   const {
@@ -211,6 +228,8 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     allowance,
     approve,
     refetchAllowance,
+    hash: approveHash,
+    isApproving: isErc20Approving,
   } = useERC20(address);
 
   const {
@@ -220,12 +239,121 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     unstakeFreeze,
     withdrawFrozen,
     isPending,
+    data: contractTxHash,
+    refetchAllData,
   } = useStakingContract();
 
-  const { showSnackbar } = useSnackbar();
-
-  const { stakingOptions, freezingBalance, availableFrozen } =
+  const { stakingOptions, freezingBalance, availableFrozen, refetchAll } =
     useStakingToken(address);
+
+  // Watch for approve transaction hash
+  useEffect(() => {
+    if (approveHash && pendingTxType === "approve" && !txHash) {
+      setTxHash(approveHash);
+      showSnackbar(
+        "Approval transaction submitted. Waiting for confirmation...",
+        "info"
+      );
+    }
+  }, [approveHash, pendingTxType, txHash, showSnackbar]);
+
+  // Watch for contract transaction hash (stake, unstake, etc.)
+  useEffect(() => {
+    if (
+      contractTxHash &&
+      pendingTxType &&
+      pendingTxType !== "approve" &&
+      !txHash
+    ) {
+      setTxHash(contractTxHash as `0x${string}`);
+      const actionMap: Record<TransactionType, string> = {
+        approve: "Approval",
+        stake: "Staking",
+        unstake: "Unstaking",
+        unstakeFreeze: "Frozen unstake",
+        withdrawFrozen: "Withdraw",
+      };
+      const actionName = actionMap[pendingTxType] || "Transaction";
+      showSnackbar(
+        `${actionName} transaction submitted. Waiting for confirmation...`,
+        "info"
+      );
+    }
+  }, [contractTxHash, pendingTxType, txHash, showSnackbar]);
+
+  // Track transaction confirmation
+  const {
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    isError: isTxError,
+    error: txError,
+  } = useWaitForTransactionReceipt({
+    hash: txHash ?? undefined,
+  });
+
+  // Handle transaction status changes
+  useEffect(() => {
+    if (!txHash || !pendingTxType) return;
+
+    if (isTxSuccess) {
+      // Transaction succeeded
+      let message = "Transaction successful";
+
+      switch (pendingTxType) {
+        case "approve":
+          message = "Token approval successful";
+          refetchAllowance();
+          setIsApproving(false);
+          break;
+        case "stake":
+          message = "Successfully staked tokens";
+          refetchAllData();
+          break;
+        case "unstake":
+          message = "Successfully unstaked tokens";
+          refetchAllData();
+          break;
+        case "unstakeFreeze":
+          message = "Frozen unstake initiated successfully";
+          refetchAllData();
+          refetchAll();
+          setConfirmDialogOpen(false);
+          break;
+        case "withdrawFrozen":
+          refetchAllData();
+          refetchAll();
+          message = "Frozen tokens withdrawn successfully";
+          break;
+      }
+
+      showSnackbar(message, "success");
+
+      // Reset transaction tracking state
+      setPendingTxType(null);
+      setTxHash(null);
+    } else if (isTxError) {
+      // Transaction failed
+      showSnackbar(parseErrorMessage(txError as any), "error");
+
+      // Reset transaction tracking state
+      setPendingTxType(null);
+      setTxHash(null);
+
+      if (pendingTxType === "approve") {
+        setIsApproving(false);
+      }
+    }
+  }, [
+    isTxSuccess,
+    isTxError,
+    txError,
+    pendingTxType,
+    txHash,
+    refetchAllowance,
+    showSnackbar,
+    refetchAllData,
+    refetchAll,
+  ]);
 
   const handleError = (
     message: string,
@@ -260,18 +388,18 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
       setBalanceError("");
       return true;
     }
-    
+
     try {
       const amountNum = Number(inputAmount);
       const balanceNum = Number(balance);
-      
+
       if (amountNum > balanceNum) {
         const errorMsg = `Amount exceeds your available balance (${balanceNum.toLocaleString()} ${symbol})`;
         setBalanceError(errorMsg);
         handleError(errorMsg, "warning");
         return false;
       }
-      
+
       setBalanceError("");
       return true;
     } catch (error) {
@@ -320,7 +448,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
         selectedOption
       );
       setStakedAmount(formattedAmount);
-      
+
       // Validate any existing amount entry against the new staked amount
       if (amount && tab === 1) {
         validateUnstakeAmount(amount);
@@ -391,31 +519,30 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
 
     try {
       setIsApproving(true);
+      setPendingTxType("approve");
+
       await approve(
         STAKING_CONTRACT_ADDRESS,
         parseUnits(amount, Number(decimals) || 18)
       );
-      await refetchAllowance();
-      handleError("Token approval successful", "success");
     } catch (error) {
       console.error("Approval error:", error);
       handleError(parseErrorMessage(error as ErrorMessage), "error");
-    } finally {
       setIsApproving(false);
+      setPendingTxType(null);
     }
   };
 
   const handleOptionSelect = (option: StakingOption) => {
     setSelectedOption(option);
-    
+
     // Reset unstake error when selecting a new option
     setUnstakeError("");
-    
+
     if (amount) {
       if (tab === 0) {
         validateReward(option, amount);
       } else if (tab === 1) {
-        // When we select a new option in unstake tab, validate if the amount is valid for this option
         validateUnstakeAmount(amount);
       }
     }
@@ -424,18 +551,16 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
   const handleStakeAction = async () => {
     if (!selectedOption || !amount) return;
 
-    // For staking tab, validate amount and reward
     if (tab === 0) {
       if (!validateAmount(amount)) {
         return;
       }
-      
+
       if (!validateReward(selectedOption, amount)) {
         handleError(rewardError, "error");
         return;
       }
     } else if (tab === 1) {
-      // For unstaking tab, validate unstake amount
       if (!validateUnstakeAmount(amount)) {
         return;
       }
@@ -447,12 +572,13 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
 
     try {
       if (tab === 0) {
+        // Staking
+        setPendingTxType("stake");
         await stake(
           address,
           selectedOption.stakingOptionId,
           parseUnits(amount, Number(decimals) || 18)
         );
-        handleError("Successfully staked tokens", "success");
       } else {
         const currentTime = Math.floor(Date.now() / 1000);
         const stakeDuration = Number(selectedOption.duration);
@@ -466,49 +592,52 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
         }
 
         // Normal unstake for unlocked stakes
+        setPendingTxType("unstake");
         await unstake(
           address,
           selectedOption.stakingOptionId,
           parseUnits(amount, Number(decimals) || 18)
         );
-        handleError("Successfully unstaked tokens", "success");
       }
     } catch (error) {
       console.error("Stake/Unstake error:", error);
       handleError(parseErrorMessage(error as ErrorMessage), "error");
+      setPendingTxType(null);
     }
   };
 
   const handleFrozenUnstake = async () => {
     if (!selectedOption || !amount) return;
-    
+
     // Validate unstake amount before proceeding with frozen unstake
     if (!validateUnstakeAmount(amount)) {
       setConfirmDialogOpen(false);
       return;
     }
-    
+
     try {
+      setPendingTxType("unstakeFreeze");
       await unstakeFreeze(
         address,
         selectedOption.stakingOptionId,
         parseUnits(amount, Number(decimals) || 18)
       );
-      handleError("Frozen unstake initiated successfully", "success");
-      setConfirmDialogOpen(false);
     } catch (error) {
       console.error("Frozen unstake error:", error);
       handleError(parseErrorMessage(error as ErrorMessage), "error");
+      setPendingTxType(null);
+      setConfirmDialogOpen(false);
     }
   };
 
   const handleWithdrawFrozen = async () => {
     try {
+      setPendingTxType("withdrawFrozen");
       await withdrawFrozen(address);
-      handleError("Frozen tokens withdrawn successfully", "success");
     } catch (error) {
       console.error("Withdraw frozen error:", error);
       handleError(parseErrorMessage(error as ErrorMessage), "error");
+      setPendingTxType(null);
     }
   };
 
@@ -516,10 +645,18 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     if (!inputAmount || !option || !contractBalance) return false;
 
     const potentialReward = calculatePotentialReward(option, inputAmount);
-    const contractBalanceNum = Number(formatUnits(BigInt(contractBalance), Number(decimals) || 18));
+    const contractBalanceNum = Number(
+      formatUnits(BigInt(contractBalance), Number(decimals) || 18)
+    );
 
     if (potentialReward > contractBalanceNum) {
-      setRewardError(`Potential reward (${potentialReward.toFixed(2)} ${symbol}) exceeds contract balance (${contractBalanceNum.toFixed(2)} ${symbol})`);
+      setRewardError(
+        `Potential reward (${potentialReward.toFixed(
+          2
+        )} ${symbol}) exceeds contract balance (${contractBalanceNum.toFixed(
+          2
+        )} ${symbol})`
+      );
       return false;
     }
 
@@ -531,11 +668,11 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
     const value = event.target.value;
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setAmount(value);
-      
+
       if (tab === 0) {
         // Validate amount against balance for staking tab
         validateAmount(value);
-        
+
         // Continue with reward validation if option is selected
         if (selectedOption) {
           validateReward(selectedOption, value);
@@ -544,13 +681,21 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
         // Validate unstake amount for unstaking tab
         validateUnstakeAmount(value);
       }
-      
+
       // Clear previous warning errors
       if (error.severity === "warning" && !balanceError && !unstakeError) {
         setError((prev) => ({ ...prev, open: false }));
       }
     }
   };
+
+  // Determine combined loading state
+  const isSubmitting =
+    isPending ||
+    isApproving ||
+    isErc20Approving ||
+    isTxLoading ||
+    !!pendingTxType;
 
   return (
     <>
@@ -625,11 +770,11 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                     {Number(availableFrozen || 0n) > 0 && (
                       <StyledButton
                         onClick={() => handleWithdrawFrozen()}
-                        disabled={isPending}
+                        disabled={isSubmitting}
                         sx={{ mt: 2 }}
                         fullWidth
                       >
-                        {isPending ? (
+                        {isSubmitting ? (
                           <CircularProgress size={24} color='inherit' />
                         ) : (
                           "Withdraw Available Tokens"
@@ -684,7 +829,7 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                   error={!!balanceError || !!rewardError || !!unstakeError}
                   helperText={balanceError || rewardError || unstakeError}
                   FormHelperTextProps={{
-                    sx: { color: "#f44336" }
+                    sx: { color: "#f44336" },
                   }}
                 />
 
@@ -836,10 +981,15 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                 {tab === 0 && needsApproval ? (
                   <StyledButton
                     fullWidth
-                    disabled={!selectedOption || !amount || isApproving || !!balanceError}
+                    disabled={
+                      !selectedOption ||
+                      !amount ||
+                      isSubmitting ||
+                      !!balanceError
+                    }
                     onClick={handleApprove}
                   >
-                    {isApproving ? (
+                    {isSubmitting ? (
                       <CircularProgress size={24} color='inherit' />
                     ) : (
                       `Approve ${symbol}`
@@ -851,13 +1001,13 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
                     disabled={
                       !selectedOption ||
                       !amount ||
-                      isPending ||
+                      isSubmitting ||
                       (tab === 0 && (!!rewardError || !!balanceError)) ||
                       (tab === 1 && !!unstakeError)
                     }
                     onClick={handleStakeAction}
                   >
-                    {isPending ? (
+                    {isSubmitting ? (
                       <CircularProgress size={24} color='inherit' />
                     ) : (
                       `${tab === 0 ? "Stake" : "Unstake"} ${symbol}`
@@ -893,13 +1043,13 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
           <Button
             onClick={() => setConfirmDialogOpen(false)}
             sx={{ color: "white" }}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <StyledButton
-            onClick={async () => {
-              await handleFrozenUnstake();
-            }}
+            onClick={handleFrozenUnstake}
+            disabled={isSubmitting}
             sx={{
               background: "linear-gradient(45deg, #f44336 30%, #d32f2f 90%)",
               "&:hover": {
@@ -907,12 +1057,14 @@ export const StakingDialog: React.FC<StakingDialogProps> = ({
               },
             }}
           >
-            Proceed
+            {isSubmitting ? (
+              <CircularProgress size={20} color='inherit' />
+            ) : (
+              "Proceed"
+            )}
           </StyledButton>
         </DialogActions>
       </MuiDialog>
     </>
   );
 };
-
-export default StakingDialog;
