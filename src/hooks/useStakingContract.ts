@@ -37,6 +37,22 @@ export function useStakingContract() {
     functionName: "getRegisteredContracts",
   });
 
+  // Get allocation percent
+  const { data: allocationPercent } = useReadContract({
+    abi: STAKING_CONTRACT_ABI,
+    address: STAKING_CONTRACT_ADDRESS,
+    functionName: "getAllocationPercent",
+  }) as { data: bigint | undefined };
+
+  // New query to get staking pools owned by the user
+  const { data: ownedStakingPools } = useReadContract({
+    abi: STAKING_CONTRACT_ABI,
+    address: STAKING_CONTRACT_ADDRESS,
+    functionName: "getOwnedStakingPools",
+    args: [userAddress],
+    enabled: !!userAddress,
+  });
+
   const { data: stakingData } = useReadContract({
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_CONTRACT_ABI,
@@ -62,7 +78,9 @@ export function useStakingContract() {
     if (balanceValue < feeValue) {
       return {
         isValid: false,
-        error: `Insufficient balance for pool fee. Required: ${formatEther(feeValue)} MON`,
+        error: `Insufficient balance for pool fee. Required: ${formatEther(
+          feeValue
+        )} MON`,
       };
     }
 
@@ -107,7 +125,7 @@ export function useStakingContract() {
       return "Staking pool already exists for this token";
     }
     if (errorMessage.includes("Insufficient allocation")) {
-      return "Insufficient token allocation for pool creation";
+      return "Insufficient token allocation for pool creation. You need to own the required minimum percentage of the token's total supply.";
     }
     if (errorMessage.includes("Insufficient fee")) {
       return "Insufficient fee provided for pool creation";
@@ -121,9 +139,10 @@ export function useStakingContract() {
 
   const createPool = async (tokenAddress: string) => {
     try {
-      const validation = validatePoolFee();
-      if (!validation.isValid) {
-        throw new Error(validation.error);
+      // Check fee
+      const feeValidation = validatePoolFee();
+      if (!feeValidation.isValid) {
+        throw new Error(feeValidation.error);
       }
 
       // Set params and wait for simulation to update
@@ -141,6 +160,7 @@ export function useStakingContract() {
       return await writeContract(createPoolSimulation.request);
     } catch (err) {
       const errorMessage = handleContractError(err as ErrorMessage);
+      console.log(`errorMessage ${JSON.stringify(errorMessage)}`);
       throw new Error(errorMessage);
     }
   };
@@ -181,10 +201,10 @@ export function useStakingContract() {
         address: STAKING_CONTRACT_ADDRESS,
         functionName: "stake",
         args: [tokenAddress, stakingOptionId, amount],
-      });  
+      });
     } catch (err) {
       const errorMessage = handleContractError(err as ErrorMessage);
-      console.log(`error staking ${errorMessage}`)
+      console.log(`error staking ${errorMessage}`);
       throw new Error(errorMessage);
     }
   };
@@ -224,6 +244,9 @@ export function useStakingContract() {
     });
   };
 
+  // Function to check if user has any owned staking pools
+  const hasOwnedPools = !!ownedStakingPools && ownedStakingPools.length > 0;
+
   return {
     registeredContracts,
     stakingData,
@@ -236,6 +259,9 @@ export function useStakingContract() {
     isPending,
     error,
     poolFee,
-    validatePoolFee
+    validatePoolFee,
+    ownedStakingPools,
+    hasOwnedPools,
+    allocationPercent
   };
 }
