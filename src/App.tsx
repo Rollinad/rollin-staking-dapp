@@ -11,6 +11,7 @@ import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
 import { AnimatedBackground, customTheme } from "./styles/styled";
+import { DepositToken } from "./components/staking/DepositToken";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -99,6 +100,7 @@ export const App = () => {
                       <Route index element={<PoolsList />} />
                       <Route path="create-pool" element={<CreatePool />} />
                       <Route path="create-option" element={<CreateStakingOption />} />
+                      <Route path="deposit" element={<DepositToken />} />
                     </Route>
                     <Route path="/" element={<Navigate to="/swap" replace />} />
                     <Route path="*" element={<Navigate to="/stake" replace />} />
