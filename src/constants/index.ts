@@ -3,6 +3,55 @@ export const STAKING_CONTRACT_ABI = [
   {
     inputs: [
       {
+        internalType: "contract IERC20",
+        name: "tokenContract",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "duration",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "apy",
+        type: "uint256",
+      },
+    ],
+    name: "addStakingOption",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract IERC20",
+        name: "tokenContract",
+        type: "address",
+      },
+    ],
+    name: "addStakingPool",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract IERC20",
+        name: "tokenContract",
+        type: "address",
+      },
+    ],
+    name: "emergencyWithdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "defaultPoolFee",
         type: "uint256",
@@ -65,6 +114,13 @@ export const STAKING_CONTRACT_ABI = [
   },
   {
     inputs: [],
+    name: "pause",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "ReentrancyGuardReentrantCall",
     type: "error",
   },
@@ -78,6 +134,19 @@ export const STAKING_CONTRACT_ABI = [
     ],
     name: "SafeERC20FailedOperation",
     type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "newAllocationPercent",
+        type: "uint256",
+      },
+    ],
+    name: "AllocationPercentUpdated",
+    type: "event",
   },
   {
     anonymous: false,
@@ -270,6 +339,101 @@ export const STAKING_CONTRACT_ABI = [
     type: "event",
   },
   {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "allocationPercent",
+        type: "uint256",
+      },
+    ],
+    name: "setAllocationPercent",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "feeVault",
+        type: "address",
+      },
+    ],
+    name: "setFeeVault",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "freezeDuration",
+        type: "uint256",
+      },
+    ],
+    name: "setFreezeDuration",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "freezeFee",
+        type: "uint256",
+      },
+    ],
+    name: "setFreezeFee",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "poolFee",
+        type: "uint256",
+      },
+    ],
+    name: "setPoolFee",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract IERC20",
+        name: "tokenContract",
+        type: "address",
+      },
+      {
+        internalType: "bytes32",
+        name: "optionId",
+        type: "bytes32",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "stake",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     anonymous: false,
     inputs: [
       {
@@ -332,6 +496,26 @@ export const STAKING_CONTRACT_ABI = [
     type: "event",
   },
   {
+    inputs: [
+      {
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "unpause",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     anonymous: false,
     inputs: [
       {
@@ -343,6 +527,29 @@ export const STAKING_CONTRACT_ABI = [
     ],
     name: "Unpaused",
     type: "event",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract IERC20",
+        name: "tokenContract",
+        type: "address",
+      },
+      {
+        internalType: "bytes32",
+        name: "optionId",
+        type: "bytes32",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "unstake",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     anonymous: false,
@@ -389,17 +596,17 @@ export const STAKING_CONTRACT_ABI = [
         type: "address",
       },
       {
-        internalType: "uint256",
-        name: "duration",
-        type: "uint256",
+        internalType: "bytes32",
+        name: "optionId",
+        type: "bytes32",
       },
       {
         internalType: "uint256",
-        name: "apy",
+        name: "amount",
         type: "uint256",
       },
     ],
-    name: "addStakingOption",
+    name: "unstakeFreeze",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -412,20 +619,14 @@ export const STAKING_CONTRACT_ABI = [
         type: "address",
       },
     ],
-    name: "addStakingPool",
+    name: "withdrawFrozen",
     outputs: [],
-    stateMutability: "payable",
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "contract IERC20",
-        name: "tokenContract",
-        type: "address",
-      },
-    ],
-    name: "emergencyWithdraw",
+    inputs: [],
+    name: "withdrawNative",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -449,6 +650,19 @@ export const STAKING_CONTRACT_ABI = [
       },
     ],
     name: "estimateReward",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getAllocationPercent",
     outputs: [
       {
         internalType: "uint256",
@@ -692,13 +906,6 @@ export const STAKING_CONTRACT_ABI = [
   },
   {
     inputs: [],
-    name: "pause",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "paused",
     outputs: [
       {
@@ -708,174 +915,6 @@ export const STAKING_CONTRACT_ABI = [
       },
     ],
     stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "renounceOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "feeVault",
-        type: "address",
-      },
-    ],
-    name: "setFeeVault",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "freezeDuration",
-        type: "uint256",
-      },
-    ],
-    name: "setFreezeDuration",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "freezeFee",
-        type: "uint256",
-      },
-    ],
-    name: "setFreezeFee",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "poolFee",
-        type: "uint256",
-      },
-    ],
-    name: "setPoolFee",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "contract IERC20",
-        name: "tokenContract",
-        type: "address",
-      },
-      {
-        internalType: "bytes32",
-        name: "optionId",
-        type: "bytes32",
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "stake",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
-      },
-    ],
-    name: "transferOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "unpause",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "contract IERC20",
-        name: "tokenContract",
-        type: "address",
-      },
-      {
-        internalType: "bytes32",
-        name: "optionId",
-        type: "bytes32",
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "unstake",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "contract IERC20",
-        name: "tokenContract",
-        type: "address",
-      },
-      {
-        internalType: "bytes32",
-        name: "optionId",
-        type: "bytes32",
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "unstakeFreeze",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "contract IERC20",
-        name: "tokenContract",
-        type: "address",
-      },
-    ],
-    name: "withdrawFrozen",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "withdrawNative",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function",
   },
 ];
