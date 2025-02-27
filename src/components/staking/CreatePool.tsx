@@ -11,6 +11,7 @@ import {
 import { useStakingContract } from "../../hooks/useStakingContract";
 import { useSnackbar } from "../../contexts/SnackbarContext";
 import { isAddress } from "viem";
+import { ErrorMessage } from "../../types/staking";
 
 export const CreatePool = () => {
   const [tokenAddress, setTokenAddress] = useState("");
@@ -56,8 +57,9 @@ export const CreatePool = () => {
       await createPool(tokenAddress);
       showSnackbar("Pool created successfully!", "success");
       setTokenAddress("");
-    } catch {
-      showSnackbar(error?.message || "Failed to create pool", "error");
+    } catch(err) {
+      const catchedException = err as ErrorMessage;
+      showSnackbar(error?.message || catchedException.message || "Failed to create pool", "error");
     }
   };
 
