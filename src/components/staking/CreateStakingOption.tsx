@@ -1,4 +1,3 @@
-// src/components/CreateStakingOption.tsx
 import { useState } from 'react'
 import {
   Card,
