@@ -509,6 +509,25 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
         return result;
     }
 
+    function getOwnedStakingPools(
+        address owner
+    ) external view returns (IERC20[] memory) {
+        return _stakingPools[owner];
+    }
+
+    function getTotalStakedAmount(
+        IERC20 tokenContract
+    ) external view returns (uint256) {
+        bytes32[] memory optionIds = _optionsByTokenContract[tokenContract];
+        uint256 totalStaked = 0;
+
+        for (uint256 i = 0; i < optionIds.length; i++) {
+            totalStaked += _optionTvl[optionIds[i]];
+        }
+
+        return totalStaked;
+    }
+
     function _isPoolOwner(IERC20 tokenContract) private view returns (bool) {
         IERC20[] memory owningPools = _stakingPools[_msgSender()];
         for (uint256 i = 0; i < owningPools.length; i++) {
