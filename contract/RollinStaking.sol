@@ -115,6 +115,7 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
     event FreezeDurationUpdated(uint256 newDuration);
     event FreezeFeeUpdated(uint256 newFee);
     event PoolFeeUpdated(uint256 newFee);
+    event AllocationPercentUpdated(uint256 newAllocationPercent);
 
     /**
      * @dev Constructor to initialize the contract
@@ -179,6 +180,17 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
         require(poolFee > 0, "Invalid fee");
         _poolFee = poolFee;
         emit PoolFeeUpdated(poolFee);
+    }
+
+    function setAllocationPercent(
+        uint256 allocationPercent
+    ) external onlyOwner {
+        require(allocationPercent > 0, "Invalid allocation percent");
+        require(allocationPercent <= BASIS_POINTS, "Allocation exceeds 100%");
+
+        _allocationPercent = allocationPercent;
+
+        emit AllocationPercentUpdated(allocationPercent);
     }
 
     /**
@@ -455,6 +467,10 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
 
     function getRegisteredContracts() public view returns (IERC20[] memory) {
         return _registeredContract;
+    }
+
+    function getAllocationPercent() public view returns (uint256) {
+        return _allocationPercent;
     }
 
     function getStakingOptions(
