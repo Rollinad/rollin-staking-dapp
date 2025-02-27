@@ -12,6 +12,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Alert,
+  AlertTitle,
 } from '@mui/material'
 import { useStakingContract } from '../../hooks/useStakingContract'
 import { useSnackbar } from '../../contexts/SnackbarContext'
@@ -27,7 +29,14 @@ export const CreateStakingOption = () => {
   const [durationUnit, setDurationUnit] = useState('days')
   const [apy, setApy] = useState('')
   
-  const { registeredContracts, createStakingOption, isPending, error } = useStakingContract()
+  const { 
+    ownedStakingPools, 
+    hasOwnedPools,
+    createStakingOption, 
+    isPending, 
+    error 
+  } = useStakingContract()
+  
   const { showSnackbar } = useSnackbar()
 
   const resetForm = () => {
@@ -122,6 +131,67 @@ export const CreateStakingOption = () => {
     },
   };
 
+  // No pools owned - show empty state
+  if (!hasOwnedPools) {
+    return (
+      <Card sx={{
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+      }}>
+        <CardContent sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          py: 4 
+        }}>
+          <Typography 
+            variant="h5" 
+            gutterBottom
+            sx={{ 
+              color: '#ffffff',
+              fontWeight: 'bold',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+              mb: 3,
+            }}
+          >
+            Create Staking Option
+          </Typography>
+          
+          <Alert 
+            severity="info" 
+            sx={{ 
+              backgroundColor: 'rgba(41, 182, 246, 0.1)',
+              color: '#ffffff',
+              border: '1px solid rgba(41, 182, 246, 0.2)',
+              mb: 3,
+              width: '100%'
+            }}
+          >
+            <AlertTitle sx={{ color: '#29B6F6' }}>No Staking Pools</AlertTitle>
+            You don't own any staking pools. Create one first, then you can add staking options to it.
+          </Alert>
+          
+          <Button
+            variant="contained"
+            href="/stake/create-pool"
+            sx={{ 
+              backgroundColor: 'rgba(156, 39, 176, 0.8)',
+              backdropFilter: 'blur(5px)',
+              '&:hover': {
+                backgroundColor: 'rgba(156, 39, 176, 0.9)',
+              },
+            }}
+          >
+            Create Staking Pool
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // User has pools - show the form
   return (
     <Card sx={{
       backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -144,7 +214,7 @@ export const CreateStakingOption = () => {
         </Typography>
         <Box component="form" onSubmit={handleSubmit}>
           <FormControl fullWidth margin="normal" sx={selectStyles}>
-            <InputLabel>Select Token</InputLabel>
+            <InputLabel>Select Token Pool</InputLabel>
             <Select
               value={tokenAddress}
               onChange={(e) => setTokenAddress(e.target.value)}
@@ -156,7 +226,7 @@ export const CreateStakingOption = () => {
                 },
               }}
             >
-              {(registeredContracts as string[])?.map(pool => (
+              {(ownedStakingPools as string[])?.map(pool => (
                 <MenuItem 
                   key={pool} 
                   value={pool}

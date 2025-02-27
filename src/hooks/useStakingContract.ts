@@ -37,6 +37,15 @@ export function useStakingContract() {
     functionName: "getRegisteredContracts",
   });
 
+  // New query to get staking pools owned by the user
+  const { data: ownedStakingPools } = useReadContract({
+    abi: STAKING_CONTRACT_ABI,
+    address: STAKING_CONTRACT_ADDRESS,
+    functionName: "getOwnedStakingPools",
+    args: [userAddress],
+    enabled: !!userAddress,
+  });
+
   const { data: stakingData } = useReadContract({
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_CONTRACT_ABI,
@@ -62,7 +71,9 @@ export function useStakingContract() {
     if (balanceValue < feeValue) {
       return {
         isValid: false,
-        error: `Insufficient balance for pool fee. Required: ${formatEther(feeValue)} MON`,
+        error: `Insufficient balance for pool fee. Required: ${formatEther(
+          feeValue
+        )} MON`,
       };
     }
 
@@ -181,10 +192,10 @@ export function useStakingContract() {
         address: STAKING_CONTRACT_ADDRESS,
         functionName: "stake",
         args: [tokenAddress, stakingOptionId, amount],
-      });  
+      });
     } catch (err) {
       const errorMessage = handleContractError(err as ErrorMessage);
-      console.log(`error staking ${errorMessage}`)
+      console.log(`error staking ${errorMessage}`);
       throw new Error(errorMessage);
     }
   };
@@ -224,6 +235,9 @@ export function useStakingContract() {
     });
   };
 
+  // Function to check if user has any owned staking pools
+  const hasOwnedPools = !!ownedStakingPools && ownedStakingPools.length > 0;
+
   return {
     registeredContracts,
     stakingData,
@@ -236,6 +250,8 @@ export function useStakingContract() {
     isPending,
     error,
     poolFee,
-    validatePoolFee
+    validatePoolFee,
+    ownedStakingPools,
+    hasOwnedPools,
   };
 }
