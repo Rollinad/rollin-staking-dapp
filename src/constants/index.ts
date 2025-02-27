@@ -32,28 +32,6 @@ export const STAKING_CONTRACT_ABI = [
     type: "constructor",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "target",
-        type: "address",
-      },
-    ],
-    name: "AddressEmptyCode",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "account",
-        type: "address",
-      },
-    ],
-    name: "AddressInsufficientBalance",
-    type: "error",
-  },
-  {
     inputs: [],
     name: "EnforcedPause",
     type: "error",
@@ -61,11 +39,6 @@ export const STAKING_CONTRACT_ABI = [
   {
     inputs: [],
     name: "ExpectedPause",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "FailedInnerCall",
     type: "error",
   },
   {
@@ -570,6 +543,25 @@ export const STAKING_CONTRACT_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+    ],
+    name: "getOwnedStakingPools",
+    outputs: [
+      {
+        internalType: "contract IERC20[]",
+        name: "",
+        type: "address[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "getPoolFee",
     outputs: [
@@ -661,6 +653,25 @@ export const STAKING_CONTRACT_ABI = [
         internalType: "struct RollinStaking.StakingOption[]",
         name: "",
         type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract IERC20",
+        name: "tokenContract",
+        type: "address",
+      },
+    ],
+    name: "getTotalStakedAmount",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -867,4 +878,4 @@ export const STAKING_CONTRACT_ABI = [
     stateMutability: "nonpayable",
     type: "function",
   },
-]; // Your contract ABI
+];
