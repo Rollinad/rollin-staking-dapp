@@ -175,7 +175,7 @@ export const CreatePool = () => {
   // Format allocation requirement for display
   const formattedAllocationRequirement = useMemo(
     () =>
-      allocationPercent ? `${Number(allocationPercent) / 100}%` : "loading...",
+      allocationPercent ? `${Number(allocationPercent)}%` : "loading...",
     [allocationPercent]
   );
 
