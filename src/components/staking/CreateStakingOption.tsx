@@ -220,10 +220,31 @@ export const CreateStakingOption = () => {
               onChange={(e) => setTokenAddress(e.target.value)}
               disabled={isPending}
               required
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: 'rgba(30, 30, 35, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(156, 39, 176, 0.2)',
+                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.5)',
+                    '& .MuiList-root': {
+                      padding: '8px',
+                    },
+                    '& .MuiMenuItem-root': {
+                      borderRadius: '8px',
+                      margin: '4px 0',
+                    }
+                  }
+                }
+              }}
               sx={{
                 '& .MuiSelect-select': {
                   color: '#ffffff',
                 },
+                '& .MuiSelect-icon': {
+                  color: 'rgba(156, 39, 176, 0.8)',
+                }
               }}
             >
               {(ownedStakingPools as string[])?.map(pool => (
@@ -232,18 +253,36 @@ export const CreateStakingOption = () => {
                   value={pool}
                   sx={{
                     color: '#ffffff',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s ease',
                     '&:hover': {
-                      backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                      backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                      transform: 'translateX(4px)',
                     },
                     '&.Mui-selected': {
-                      backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                      backgroundColor: 'rgba(156, 39, 176, 0.25)',
+                      fontWeight: 'bold',
                       '&:hover': {
-                        backgroundColor: 'rgba(156, 39, 176, 0.3)',
+                        backgroundColor: 'rgba(156, 39, 176, 0.35)',
                       },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        left: '0',
+                        width: '4px',
+                        height: '70%',
+                        backgroundColor: '#9C27B0',
+                        borderRadius: '0 4px 4px 0',
+                      }
                     },
                   }}
                 >
-                  {pool}
+                  <Typography sx={{ 
+                    fontSize: '0.9rem',
+                    letterSpacing: '0.3px'
+                  }}>
+                    {pool}
+                  </Typography>
                 </MenuItem>
               ))}
             </Select>
