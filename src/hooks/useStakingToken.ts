@@ -50,8 +50,8 @@ export function useStakingToken(tokenAddress: `0x${string}`) {
       account: userAddress,
     });
 
-  const tvl = totalStakedAmount || 0n;
-  const reward = availableBalance || 0n;
+  const tvl = totalStakedAmount || undefined;
+  const reward = availableBalance || undefined;
 
   // Function to refetch all data
   const refetchAll = async () => {
@@ -66,8 +66,8 @@ export function useStakingToken(tokenAddress: `0x${string}`) {
 
   return {
     // Data
-    tvl: tvl.toString(),
-    reward: reward.toString(),
+    tvl: tvl?.toString(),
+    reward: reward?.toString(),
     totalStakedAmount,
     availableBalance,
     stakingOptions,
