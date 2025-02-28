@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
-  CircularProgress,
   Alert,
   Tabs,
   Tab,
   Paper,
+  Skeleton,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
@@ -69,6 +69,30 @@ const a11yProps = (index: number) => {
     "aria-controls": `proposal-tabpanel-${index}`,
   };
 };
+
+// Create a ProposalHeaderSkeleton component
+const ProposalHeaderSkeleton = () => (
+  <Box sx={{ mb: 4 }}>
+    <Skeleton variant="text" width="60%" height={40} sx={{ mb: 1 }} />
+    <Skeleton variant="text" width="40%" height={24} sx={{ mb: 2 }} />
+    <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: 2, mb: 2 }} />
+    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+      <Skeleton variant="rectangular" width="48%" height={60} sx={{ borderRadius: 1 }} />
+      <Skeleton variant="rectangular" width="48%" height={60} sx={{ borderRadius: 1 }} />
+    </Box>
+  </Box>
+);
+
+// Create a TabContentSkeleton component
+const TabContentSkeleton = () => (
+  <Box>
+    <Skeleton variant="text" width="70%" height={32} sx={{ mb: 2 }} />
+    <Skeleton variant="text" width="90%" height={24} sx={{ mb: 1 }} />
+    <Skeleton variant="text" width="80%" height={24} sx={{ mb: 2 }} />
+    <Skeleton variant="rectangular" width="100%" height={100} sx={{ borderRadius: 2, mb: 3 }} />
+    <Skeleton variant="rectangular" width="100%" height={80} sx={{ borderRadius: 2 }} />
+  </Box>
+);
 
 export const ProposalDetail: React.FC = () => {
   // Router hooks
@@ -136,7 +160,6 @@ export const ProposalDetail: React.FC = () => {
     approveProposal,
     isPending: proposalPending,
     isConfirming: proposalConfirming,
-    // writeError: proposalError,
   } = useProposalManagement();
 
   const {
@@ -152,12 +175,15 @@ export const ProposalDetail: React.FC = () => {
     setTabValue(newValue);
   };
 
-  // Calculate loading state
-  const isLoading =
+  // Check if critical data is loading - this affects if we can determine the structure of tabs
+  const isCriticalDataLoading = 
+    basicLoading || 
+    tokenLoading || 
+    statusLoading;
+  
+  // Check if user-specific data is loading - this doesn't affect layout structure
+  const isDetailDataLoading = 
     userDataLoading ||
-    basicLoading ||
-    tokenLoading ||
-    statusLoading ||
     contributionLoading ||
     balanceLoading ||
     priceLoading ||
@@ -283,21 +309,12 @@ export const ProposalDetail: React.FC = () => {
     proposalStatusData, statusLoading, refetchStatusData
   ]);
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // Check for data errors (after loading is complete)
+  const hasDataError = !isCriticalDataLoading && 
+    (!proposalBasicData || !proposalTokenData || !proposalStatusData);
 
-  console.log(`test ${proposalBasicData}`)
-  console.log(`test ${proposalTokenData}`)
-  console.log(`test ${proposalStatusData}`)
-
-  // Handle errors if data is missing
-  if (!proposalBasicData || !proposalTokenData || !proposalStatusData) {
+  // Show error state if data failed to load
+  if (hasDataError) {
     return (
       <Box>
         <Button 
@@ -326,66 +343,239 @@ export const ProposalDetail: React.FC = () => {
     );
   }
 
-  // Type assertions for clarity
-  const basicData = proposalBasicData as ProposalBasic;
-  const tokenData = proposalTokenData as ProposalToken;
-  const statusData = proposalStatusData as ProposalStatus;
-  const contributionData = contributionInfoData as ContributionInfo | null;
-  const contributorCounts = contributorCountsData as ContributorCounts | null;
-  const approvedContributors = approvedContributorsData as [ContributorInfo[], bigint] | null;
-  const tokenBalance = tokenBalanceData as bigint | null;
-  const tokenPrice = tokenPriceData as bigint | null;
+  // If critical data is loaded, proceed with rendering the real UI
+  if (!isCriticalDataLoading) {
+    // Type assertions for clarity
+    const basicData = proposalBasicData as ProposalBasic;
+    const tokenData = proposalTokenData as ProposalToken;
+    const statusData = proposalStatusData as ProposalStatus;
+    const contributionData = contributionInfoData as ContributionInfo | null;
+    const contributorCounts = contributorCountsData as ContributorCounts | null;
+    const approvedContributors = approvedContributorsData as [ContributorInfo[], bigint] | null;
+    const tokenBalance = tokenBalanceData as bigint | null;
+    const tokenPrice = tokenPriceData as bigint | null;
 
-  console.log(`basicData ${basicData.creator}`)
-  console.log(`basicData ${basicData.currentAmount}`)
-  console.log(`basicData ${basicData.isApproved}`)
-  console.log(`basicData ${basicData.isClosed}`)
-  console.log(`basicData ${basicData.targetAmount}`)
-  console.log(`basicData ${basicData.tokensDeployed}`)
+    // Calculate progress percentage
+    const percentComplete =
+      basicData.targetAmount > 0n
+        ? Number((basicData.currentAmount * 100n) / basicData.targetAmount)
+        : 0;
 
-  // Calculate progress percentage
-  const percentComplete =
-    basicData.targetAmount > 0n
-      ? Number((basicData.currentAmount * 100n) / basicData.targetAmount)
-      : 0;
+    // Determine if this is the user's own proposal
+    const isCreator =
+      basicData.creator.toLowerCase() === userData?.xAccountId?.toLowerCase();
 
-  // Determine if this is the user's own proposal
-  const isCreator =
-    basicData.creator.toLowerCase() === userData?.xAccountId?.toLowerCase();
+    // Determine if funding period has ended
+    const isFundingEnded = statusData.timeRemaining === 0n;
 
-  // Determine if funding period has ended
-  const isFundingEnded = statusData.timeRemaining === 0n;
+    // Determine if target has been met
+    const hasMetTarget = statusData.hasMetTarget;
 
-  // Determine if target has been met
-  const hasMetTarget = statusData.hasMetTarget;
+    // Determine if user can contribute
+    const canContribute =
+      basicData.isApproved &&
+      !basicData.isClosed &&
+      contributionData &&
+      contributionData.isApproved &&
+      !isFundingEnded;
 
-  // Determine if user can contribute
-  const canContribute =
-    basicData.isApproved &&
-    !basicData.isClosed &&
-    contributionData &&
-    contributionData.isApproved &&
-    !isFundingEnded;
+    // Determine if user can withdraw
+    const canWithdraw =
+      !basicData.isClosed &&
+      isFundingEnded &&
+      !hasMetTarget &&
+      contributionData &&
+      contributionData.currentContribution > 0n;
 
-  // Determine if user can withdraw
-  const canWithdraw =
-    !basicData.isClosed &&
-    isFundingEnded &&
-    !hasMetTarget &&
-    contributionData &&
-    contributionData.currentContribution > 0n;
+    // Determine if creator can release funds
+    const canReleaseFunds =
+      isCreator &&
+      basicData.isApproved &&
+      !basicData.isClosed &&
+      isFundingEnded &&
+      hasMetTarget;
 
-  // Determine if creator can release funds
-  const canReleaseFunds =
-    isCreator &&
-    basicData.isApproved &&
-    !basicData.isClosed &&
-    isFundingEnded &&
-    hasMetTarget;
+    // Determine if trading is available
+    const canTrade = basicData.isClosed && basicData.tokensDeployed;
 
-  // Determine if trading is available
-  const canTrade = basicData.isClosed && basicData.tokensDeployed;
+    return (
+      <Box>
+        {/* Back Button */}
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mb: 2, color: "white" }}
+        >
+          Back to Proposals
+        </Button>
 
+        {/* Proposal Header - Show skeleton if detail data is loading */}
+        {isDetailDataLoading ? (
+          <ProposalHeaderSkeleton />
+        ) : (
+          <ProposalHeader
+            proposalBasic={basicData}
+            proposalToken={tokenData}
+            proposalStatus={statusData}
+            contributionInfo={contributionData}
+            userData={userData}
+            isCreator={isCreator}
+            isFundingEnded={isFundingEnded}
+            hasMetTarget={hasMetTarget}
+            canReleaseFunds={canReleaseFunds}
+            canWithdraw={canWithdraw ?? false}
+            canTrade={canTrade}
+            percentComplete={percentComplete}
+            handleApproveProposal={handleApproveProposal}
+            handleRequestToContribute={handleRequestToContribute}
+            handleReleaseFunds={handleReleaseFunds}
+            handleWithdraw={handleWithdraw}
+            openSwapDialog={openSwapDialog}
+            formatTimeRemaining={formatTimeRemaining}
+            formatCreationDate={formatCreationDate}
+            contributionPending={contributionPending}
+            contributionConfirming={contributionConfirming}
+            proposalPending={proposalPending}
+            proposalConfirming={proposalConfirming}
+            tradingPending={tradingPending}
+            tradingConfirming={tradingConfirming}
+            tokenBalance={tokenBalance}
+            setTabValue={setTabValue}
+          />
+        )}
+
+        {/* Tabs and Content */}
+        <Paper
+          elevation={3}
+          sx={{
+            backgroundColor: "rgba(0, 0, 0, 0.4)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: 2,
+            mb: 3,
+          }}
+        >
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            aria-label="proposal tabs"
+            sx={{
+              borderBottom: 1,
+              borderColor: "rgba(255, 255, 255, 0.1)",
+              "& .MuiTab-root": {
+                color: "rgba(255, 255, 255, 0.7)",
+                "&.Mui-selected": {
+                  color: "white",
+                },
+              },
+              "& .MuiTabs-indicator": {
+                backgroundColor: "primary.main",
+              },
+            }}
+          >
+            <Tab label="Overview" {...a11yProps(0)} />
+            <Tab label="Contribute" {...a11yProps(1)} />
+            <Tab label="Contributors" {...a11yProps(2)} />
+            {canTrade && <Tab label="Trade" {...a11yProps(3)} />}
+          </Tabs>
+
+          {/* Overview Tab */}
+          <TabPanel value={tabValue} index={0}>
+            {isDetailDataLoading ? (
+              <TabContentSkeleton />
+            ) : (
+              <OverviewTab
+                proposalBasic={basicData}
+                proposalToken={tokenData}
+                isFundingEnded={isFundingEnded}
+                hasMetTarget={hasMetTarget}
+                tokenPrice={tokenPrice}
+                tokenBalance={tokenBalance}
+              />
+            )}
+          </TabPanel>
+
+          {/* Contribute Tab */}
+          <TabPanel value={tabValue} index={1}>
+            {isDetailDataLoading ? (
+              <TabContentSkeleton />
+            ) : (
+              <ContributeTab
+                proposalBasic={basicData}
+                proposalToken={tokenData}
+                contributionInfo={contributionData}
+                userData={userData}
+                isFundingEnded={isFundingEnded}
+                canWithdraw={canWithdraw ?? false}
+                contributionAmount={contributionAmount}
+                handleContributionAmountChange={handleContributionAmountChange}
+                handleContribute={handleContribute}
+                handleRequestToContribute={handleRequestToContribute}
+                handleWithdraw={handleWithdraw}
+                contributionPending={contributionPending}
+                contributionConfirming={contributionConfirming}
+                contributionError={contributionError}
+                canContribute={canContribute ?? undefined}
+              />
+            )}
+          </TabPanel>
+
+          {/* Contributors Tab */}
+          <TabPanel value={tabValue} index={2}>
+            {isDetailDataLoading ? (
+              <TabContentSkeleton />
+            ) : (
+              <ContributorsTab
+                contributorCounts={contributorCounts}
+                approvedContributors={approvedContributors}
+                isCreator={isCreator}
+                canReleaseFunds={canReleaseFunds}
+                handleReleaseFunds={handleReleaseFunds}
+                contributionPending={contributionPending}
+                contributionConfirming={contributionConfirming}
+              />
+            )}
+          </TabPanel>
+
+          {/* Trade Tab */}
+          {canTrade && (
+            <TabPanel value={tabValue} index={3}>
+              {isDetailDataLoading ? (
+                <TabContentSkeleton />
+              ) : (
+                <TradeTab
+                  proposalToken={tokenData}
+                  tokenPrice={tokenPrice}
+                  tokenBalance={tokenBalance}
+                  openSwapDialog={openSwapDialog}
+                  tradingPending={tradingPending}
+                  tradingConfirming={tradingConfirming}
+                  tradingError={tradingError}
+                />
+              )}
+            </TabPanel>
+          )}
+        </Paper>
+
+        {/* Swap Dialog */}
+        <SwapDialog
+          isOpen={isSwapDialogOpen}
+          swapType={swapType}
+          swapAmount={swapAmount}
+          proposalToken={tokenData}
+          tokenPrice={tokenPrice}
+          handleSwapAmountChange={handleSwapAmountChange}
+          handleSwap={handleSwap}
+          handleClose={() => setIsSwapDialogOpen(false)}
+          tradingPending={tradingPending}
+          tradingConfirming={tradingConfirming}
+          tradingError={tradingError}
+        />
+      </Box>
+    );
+  }
+
+  // If critical data is still loading, show tabs with skeleton content for better UX
   return (
     <Box>
       {/* Back Button */}
@@ -397,38 +587,10 @@ export const ProposalDetail: React.FC = () => {
         Back to Proposals
       </Button>
 
-      {/* Proposal Header */}
-      <ProposalHeader
-        proposalBasic={basicData}
-        proposalToken={tokenData}
-        proposalStatus={statusData}
-        contributionInfo={contributionData}
-        userData={userData}
-        isCreator={isCreator}
-        isFundingEnded={isFundingEnded}
-        hasMetTarget={hasMetTarget}
-        canReleaseFunds={canReleaseFunds}
-        canWithdraw={canWithdraw ?? false}
-        canTrade={canTrade}
-        percentComplete={percentComplete}
-        handleApproveProposal={handleApproveProposal}
-        handleRequestToContribute={handleRequestToContribute}
-        handleReleaseFunds={handleReleaseFunds}
-        handleWithdraw={handleWithdraw}
-        openSwapDialog={openSwapDialog}
-        formatTimeRemaining={formatTimeRemaining}
-        formatCreationDate={formatCreationDate}
-        contributionPending={contributionPending}
-        contributionConfirming={contributionConfirming}
-        proposalPending={proposalPending}
-        proposalConfirming={proposalConfirming}
-        tradingPending={tradingPending}
-        tradingConfirming={tradingConfirming}
-        tokenBalance={tokenBalance}
-        setTabValue={setTabValue}
-      />
+      {/* Skeleton Header */}
+      <ProposalHeaderSkeleton />
 
-      {/* Tabs and Content */}
+      {/* Skeleton Tabs */}
       <Paper
         elevation={3}
         sx={{
@@ -460,85 +622,19 @@ export const ProposalDetail: React.FC = () => {
           <Tab label="Overview" {...a11yProps(0)} />
           <Tab label="Contribute" {...a11yProps(1)} />
           <Tab label="Contributors" {...a11yProps(2)} />
-          {canTrade && <Tab label="Trade" {...a11yProps(3)} />}
         </Tabs>
 
-        {/* Overview Tab */}
+        {/* Skeleton Tab Content */}
         <TabPanel value={tabValue} index={0}>
-          <OverviewTab
-            proposalBasic={basicData}
-            proposalToken={tokenData}
-            isFundingEnded={isFundingEnded}
-            hasMetTarget={hasMetTarget}
-            tokenPrice={tokenPrice}
-            tokenBalance={tokenBalance}
-          />
+          <TabContentSkeleton />
         </TabPanel>
-
-        {/* Contribute Tab */}
         <TabPanel value={tabValue} index={1}>
-          <ContributeTab
-            proposalBasic={basicData}
-            proposalToken={tokenData}
-            contributionInfo={contributionData}
-            userData={userData}
-            isFundingEnded={isFundingEnded}
-            canWithdraw={canWithdraw ?? false}
-            contributionAmount={contributionAmount}
-            handleContributionAmountChange={handleContributionAmountChange}
-            handleContribute={handleContribute}
-            handleRequestToContribute={handleRequestToContribute}
-            handleWithdraw={handleWithdraw}
-            contributionPending={contributionPending}
-            contributionConfirming={contributionConfirming}
-            contributionError={contributionError}
-            canContribute={canContribute ?? undefined}
-          />
+          <TabContentSkeleton />
         </TabPanel>
-
-        {/* Contributors Tab */}
         <TabPanel value={tabValue} index={2}>
-          <ContributorsTab
-            contributorCounts={contributorCounts}
-            approvedContributors={approvedContributors}
-            isCreator={isCreator}
-            canReleaseFunds={canReleaseFunds}
-            handleReleaseFunds={handleReleaseFunds}
-            contributionPending={contributionPending}
-            contributionConfirming={contributionConfirming}
-          />
+          <TabContentSkeleton />
         </TabPanel>
-
-        {/* Trade Tab */}
-        {canTrade && (
-          <TabPanel value={tabValue} index={3}>
-            <TradeTab
-              proposalToken={tokenData}
-              tokenPrice={tokenPrice}
-              tokenBalance={tokenBalance}
-              openSwapDialog={openSwapDialog}
-              tradingPending={tradingPending}
-              tradingConfirming={tradingConfirming}
-              tradingError={tradingError}
-            />
-          </TabPanel>
-        )}
       </Paper>
-
-      {/* Swap Dialog */}
-      <SwapDialog
-        isOpen={isSwapDialogOpen}
-        swapType={swapType}
-        swapAmount={swapAmount}
-        proposalToken={tokenData}
-        tokenPrice={tokenPrice}
-        handleSwapAmountChange={handleSwapAmountChange}
-        handleSwap={handleSwap}
-        handleClose={() => setIsSwapDialogOpen(false)}
-        tradingPending={tradingPending}
-        tradingConfirming={tradingConfirming}
-        tradingError={tradingError}
-      />
     </Box>
   );
 };
