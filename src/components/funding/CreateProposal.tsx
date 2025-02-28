@@ -36,7 +36,7 @@ export const CreateProposal = () => {
 
   // Check if user is a creator and has Twitter linked
   const { user } = usePrivy();
-  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter');
+  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter_oauth');
 
   useEffect(() => {
     if (!userDataLoading && userData) {

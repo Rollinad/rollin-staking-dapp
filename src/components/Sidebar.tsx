@@ -1,4 +1,3 @@
-// Sidebar.tsx
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -15,10 +14,9 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import CampaignIcon from "@mui/icons-material/Campaign"; // Icon for DAO Funding
+import CampaignIcon from "@mui/icons-material/Campaign";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Assessment } from "@mui/icons-material";
 
 interface SidebarContainerProps {
   open: boolean;
@@ -185,26 +183,6 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
           </StyledListItemButton>
           
           <StyledListItemButton
-            onClick={() => handleNavigation("/analytics")}
-            selected={location.pathname.startsWith("/analytics")}
-          >
-            <StyledListItemIcon>
-              <Assessment />
-            </StyledListItemIcon>
-            {sidebarOpen && (
-              <StyledListItemText
-                primary='Analytics'
-                secondary='Trade History'
-                sx={{
-                  "& .MuiListItemText-secondary": {
-                    color: "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.7rem",
-                  },
-                }}
-              />
-            )}
-          </StyledListItemButton>
-          <StyledListItemButton
             onClick={handleStakeClick}
             selected={location.pathname.startsWith("/stake")}
           >
@@ -347,7 +325,7 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
                 />
               </StyledSubListItemButton>
               <StyledSubListItemButton
-                selected={isCurrentRoute("/funding/create")}
+                selected={isCurrentRoute("/funding/create") || isCurrentRoute("/funding/become-creator")}
                 onClick={() => handleNavigation("/funding/create")}
               >
                 <StyledListItemText

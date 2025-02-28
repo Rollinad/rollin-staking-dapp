@@ -49,13 +49,13 @@ export const ProposalList = () => {
     ? (filteredProposals as ProposalView[]).slice((page - 1) * itemsPerPage, page * itemsPerPage)
     : [];
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
     window.scrollTo(0, 0);
   };
 
   const handleFilterChange = (
-    event: React.MouseEvent<HTMLElement>,
+    _event: React.MouseEvent<HTMLElement>,
     newFilter: string,
   ) => {
     if (newFilter !== null) {
@@ -85,13 +85,31 @@ export const ProposalList = () => {
           
           <Stack direction="row" spacing={2}>
             {userData?.isRegistered && (
-              <Button 
-                variant="contained" 
-                onClick={() => navigate('/funding/create')}
-                sx={{ borderRadius: 2 }}
-              >
-                {userData?.isCreator ? 'Create Proposal' : 'Become a Creator'}
-              </Button>
+              <>
+                {userData?.isCreator ? (
+                  <Button 
+                    variant="contained" 
+                    onClick={() => navigate('/funding/create')}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Create Proposal
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="contained" 
+                    onClick={() => navigate('/funding/become-creator')}
+                    sx={{ 
+                      borderRadius: 2,
+                      background: 'linear-gradient(90deg, #9c27b0 0%, #673ab7 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(90deg, #7b1fa2 0%, #512da8 100%)'
+                      }
+                    }}
+                  >
+                    Become a Creator
+                  </Button>
+                )}
+              </>
             )}
             
             {!userData?.isRegistered && (

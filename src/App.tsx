@@ -10,8 +10,6 @@ import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
 import { AnimatedBackground } from "./styles/styled";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
-import PrivyWagmiConnector from "./components/wallet/PriviWagmiConnector";
 import { ProposalDetail } from "./components/funding/proposal-detail/ProposalDetail";
 import { MyContributions } from "./components/funding/MyContribution";
 import { MyProposals } from "./components/funding/MyProposals";
@@ -19,6 +17,8 @@ import { ProposalList } from "./components/funding/ProposalList";
 import { DepositToken } from "./components/staking/DepositToken";
 import { CreateProposal } from "./components/funding/CreateProposal";
 import UserRegistration from "./components/funding/UserRegistration";
+import { BecomeCreator } from "./components/BecomeCreator";
+import { useUserManagement } from "./hooks/useFundingContract";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -40,19 +40,14 @@ const MainContent = styled(Box, {
 }));
 
 export const App = () => {
-  // Keep using wagmi's useAccount during transition
-  const { isConnected: wagmiConnected, address } = useAccount();
-
-  // Also use Privy's authentication state
-  const { authenticated } = usePrivy();
-  const { wallets } = useWallets();
-
-  // Combine both states during the transition period
-  const isConnected = wagmiConnected || (authenticated && wallets.length > 0);
+  const { isConnected } = useAccount();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
   const isMobile = useMediaQuery("(max-width:600px)");
+  
+  // Get user data from contract
+  const { userData } = useUserManagement();
+  const isRegistered = userData?.isRegistered || false;
 
   useEffect(() => {
     if (isMobile) {
@@ -60,27 +55,12 @@ export const App = () => {
     }
   }, [isMobile]);
 
-  // Check if user is registered
-  useEffect(() => {
-    const checkUserRegistration = async () => {
-      if (isConnected && address) {
-        // This will need to be implemented with your contract integration
-        // For now, we'll just set it to false
-        setIsRegistered(false);
-      }
-    };
-
-    checkUserRegistration();
-  }, [isConnected, address]);
-
   const handleSidebarCollapse = (collapsed: boolean) => {
     setSidebarCollapsed(collapsed);
   };
 
   return (
       <AnimatedBackground>
-        <PrivyWagmiConnector />
-
         <Sidebar onCollapse={handleSidebarCollapse} />
         <MainContent sidebarCollapsed={sidebarCollapsed}>
           <Container maxWidth='lg' sx={{ py: 4 }}>
@@ -97,7 +77,7 @@ export const App = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
-                  ml: { xs: 5, sm: 6 }, // Add margin to move logo and title right
+                  ml: { xs: 5, sm: 6 },
                 }}
               >
                 <img
@@ -148,14 +128,14 @@ export const App = () => {
                       <Route index element={<ProposalList />} />
                       <Route path='my-proposals' element={<MyProposals />} />
                       <Route path="create" element={
-                        isRegistered ? <CreateProposal /> : <UserRegistration />
+                        isRegistered 
+                          ? (userData?.isCreator ? <CreateProposal /> : <BecomeCreator />) 
+                          : <UserRegistration />
                       } />
                       <Route path='detail/:id' element={<ProposalDetail />} />
-                      <Route
-                        path='contributions'
-                        element={<MyContributions />}
-                      />
+                      <Route path='contributions' element={<MyContributions />} />
                       <Route path="register" element={<UserRegistration />} />
+                      <Route path="become-creator" element={<BecomeCreator />} />
                     </Route>
 
                     {/* Default routes */}

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
   Typography,
-  TextField,
   Button,
   Alert,
   Stack,
@@ -14,8 +13,6 @@ import {
   Divider,
   Avatar,
   Grid,
-  Switch,
-  FormControlLabel
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
@@ -32,15 +29,15 @@ export const UserRegistration = () => {
   const navigate = useNavigate();
   
   // Get user's Privy and blockchain data
-  const { user } = usePrivy();
-  const { userData, userDataLoading, registerUser, updateToCreator, isPending, isConfirming, isConfirmed, writeError, refetchUserData } = useUserManagement();
+  const { user, linkTwitter } = usePrivy();
+  const { userData, userDataLoading, registerUser, isPending, isConfirming, isConfirmed, writeError, refetchUserData } = useUserManagement();
   
   // Check if user has Twitter linked
-  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter');
+  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter_oauth');
   
   // Get the Twitter ID from Privy if available
-  const twitterAccount = user?.linkedAccounts?.find(account => account.type === 'twitter');
-  const twitterUsername = twitterAccount?.username || twitterAccount?.id || '';
+  const twitterAccount = user?.linkedAccounts?.find(account => account.type === 'twitter_oauth');
+  const twitterUsername = twitterAccount?.username || twitterAccount?.subject || '';
 
   // Update Twitter ID when account is linked
   useEffect(() => {
@@ -82,24 +79,16 @@ export const UserRegistration = () => {
     }
   }, [userData, becomeCreator, navigate]);
 
-  // Handle opening the Twitter connection modal
-  const handleConnectTwitter = () => {
-    document.dispatchEvent(new Event('openAccountModal'));
-  };
-
   // Handle registration submission
   const handleSubmit = () => {
     if (!twitterId) return;
     
     if (userData?.isRegistered && becomeCreator) {
-      updateToCreator(twitterId);
+      // If already registered and wants to become creator, redirect to BecomeCreator page
+      navigate('/funding/become-creator');
     } else {
+      // Just register as a new user
       registerUser(twitterId);
-      // If user wants to become a creator right away
-      if (becomeCreator) {
-        // Need to wait for registration to complete first
-        // The user will be redirected to create page after registration
-      }
     }
   };
 
@@ -206,7 +195,7 @@ export const UserRegistration = () => {
                 variant="contained"
                 size="large"
                 startIcon={<TwitterIcon />}
-                onClick={handleConnectTwitter}
+                onClick={linkTwitter}
                 sx={{ 
                   bgcolor: '#1DA1F2', 
                   '&:hover': { bgcolor: '#0c8bd9' },

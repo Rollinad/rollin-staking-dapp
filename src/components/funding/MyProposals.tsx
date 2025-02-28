@@ -91,8 +91,14 @@ export const MyProposals = () => {
         </Typography>
         <Button 
           variant="contained" 
-          onClick={() => navigate('/funding/register')}
-          sx={{ borderRadius: 2 }}
+          onClick={() => navigate('/funding/become-creator')}
+          sx={{ 
+            borderRadius: 2,
+            background: 'linear-gradient(90deg, #9c27b0 0%, #673ab7 100%)',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #7b1fa2 0%, #512da8 100%)'
+            }
+          }}
         >
           Become a Creator
         </Button>
