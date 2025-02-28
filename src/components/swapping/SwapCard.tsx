@@ -159,14 +159,29 @@ export const SwapCard = () => {
     return addresses;
   }, [sellToken, buyToken]);
 
-  const tokensData = useTokensData(tokenAddresses);
+  const { refreshBalances, isRefreshing, isLoading: balancesLoading, ...tokenBalancesRaw } = useTokensData(tokenAddresses);
 
+  const tokenBalances = tokenBalancesRaw as Record<string, { balance?: bigint }>;
+  
+  // Sync the isSwapping state with balance loading state to prevent UI jumping
+  useEffect(() => {
+    if (balancesLoading && !isSwapping) {
+      setIsSwapping(true);
+    } else if (!balancesLoading && isSwapping) {
+      // Add a small delay to prevent UI flashing
+      const timeout = setTimeout(() => {
+        setIsSwapping(false);
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [balancesLoading, isSwapping]);
+  
   // Update balance cache when tokensData changes
   useEffect(() => {
     const now = Date.now();
     
     // Update cache with new balances
-    Object.entries(tokensData).forEach(([address, data]) => {
+    Object.entries(tokenBalances).forEach(([address, data]) => {
       if (data && data.balance !== undefined) {
         balanceCacheRef.current[address.toLowerCase()] = {
           balance: data.balance,
@@ -176,20 +191,20 @@ export const SwapCard = () => {
     });
     
     console.log("Cache updated:", balanceCacheRef.current);
-    console.log("Current tokensData:", tokensData);
-  }, [tokensData]);
+    console.log("Current tokensData:", tokenBalances);
+  }, [tokenBalances]);
 
   // Get sell and buy token balances with fallbacks from cache
   const sellBalance = useMemo(() => {
     if (!sellToken) return undefined;
     
     // Try accessing balance using normal address
-    let balance = tokensData[sellToken.address]?.balance;
+    let balance = tokenBalances[sellToken.address]?.balance;
     
     // If that fails, try with lowercase address
     if (balance === undefined) {
       const lowerAddress = sellToken.address.toLowerCase();
-      balance = tokensData[lowerAddress]?.balance;
+      balance = tokenBalances[lowerAddress]?.balance;
       
       // If still undefined, try the cache
       if (balance === undefined && balanceCacheRef.current[lowerAddress]) {
@@ -198,19 +213,24 @@ export const SwapCard = () => {
       }
     }
     
+    // Fix infinite loading - return 0n if balance is undefined after swap
+    if (balance === undefined && !isSwapping) {
+      return 0n;
+    }
+    
     return balance;
-  }, [sellToken, tokensData]);
+  }, [sellToken, tokenBalances, isSwapping, isRefreshing]);
 
   const buyBalance = useMemo(() => {
     if (!buyToken) return undefined;
     
     // Try accessing balance using normal address
-    let balance = tokensData[buyToken.address]?.balance;
+    let balance = tokenBalances[buyToken.address]?.balance;
     
     // If that fails, try with lowercase address
     if (balance === undefined) {
       const lowerAddress = buyToken.address.toLowerCase();
-      balance = tokensData[lowerAddress]?.balance;
+      balance = tokenBalances[lowerAddress]?.balance;
       
       // If still undefined, try the cache
       if (balance === undefined && balanceCacheRef.current[lowerAddress]) {
@@ -219,8 +239,16 @@ export const SwapCard = () => {
       }
     }
     
+    // Fix infinite loading - return 0n if balance is undefined after swap
+    if (balance === undefined && !isSwapping) {
+      return 0n;
+    }
+    
     return balance;
-  }, [buyToken, tokensData]);
+  }, [buyToken, tokenBalances, isSwapping, isRefreshing]);
+
+  console.log(`buybalance: ${buyBalance}`)
+  console.log(`sellbalance: ${sellBalance}`)
 
   // Format balance with maximum 6 decimal places
   const formatBalance = (balance: bigint, decimals: number) => {
@@ -342,11 +370,31 @@ export const SwapCard = () => {
           clearInterval(statusUpdateInterval);
           setStatusUpdateInterval(null);
         }
+        
+        // Force refresh balances when the gasless transaction completes
+        if (statusData.status === 'confirmed') {
+          // Set isSwapping to true to show loading indicator
+          setIsSwapping(true);
+          
+          // Clear balance cache
+          balanceCacheRef.current = {};
+          
+          // Give blockchain time to update before refreshing balances
+          setTimeout(async () => {
+            try {
+              console.log("Gasless swap completed - refreshing token balances");
+              await refreshBalances();
+            } catch (error) {
+              console.error("Error refreshing balances after gasless swap:", error);
+              setIsSwapping(false);
+            }
+          }, 1000);
+        }
       }
     } catch (error) {
       console.error('Error checking trade status:', error);
     }
-  }, [checkGaslessTradeStatus, statusUpdateInterval]);
+  }, [checkGaslessTradeStatus, statusUpdateInterval, refreshBalances]);
 
   // Start polling for trade status
   const startStatusPolling = useCallback((hash: string) => {
@@ -404,6 +452,9 @@ export const SwapCard = () => {
     if (!isConnected || !sellAmount || isAmountExceedingBalance || !sellToken || !buyToken) return;
 
     try {
+      // Store sell token address to ensure we track the right token after swap
+      const sellTokenAddress = sellToken.address.toLowerCase();
+      
       const result = await executeSwap(sellToken, buyToken, sellAmount, useGasless);
       
       if (useGasless && isGaslessSwapResult(result)) {
@@ -412,9 +463,65 @@ export const SwapCard = () => {
         setTradeStatus('submitted');
         startStatusPolling(result.tradeHash);
       } else {
-        // For regular swaps, reset form after successful swap
+        // For regular swaps, reset form after successful swap and refresh token data
         setSellAmount("");
         setBuyAmount("");
+        
+        // Set isSwapping to true to show loading indicator
+        setIsSwapping(true);
+        
+        // Clear the balance cache to force a refresh
+        balanceCacheRef.current = {};
+        
+        // Give blockchain time to update before refreshing balances
+        setTimeout(async () => {
+          try {
+            console.log("Refreshing balances after swap for sell token:", sellTokenAddress);
+            // Force a full refresh of the chain state
+            await refreshBalances();
+            
+            // Add longer and multiple delayed refreshes to catch the sell token update 
+            setTimeout(async () => {
+              try {
+                console.log("First additional balance refresh...");
+                await refreshBalances();
+                
+                // Check if sell token balance is updated
+                console.log("Current sell token balance:", tokenBalances[sellTokenAddress]?.balance?.toString());
+                
+                // Do another refresh with longer delay for the sell token
+                setTimeout(async () => {
+                  try {
+                    console.log("Final balance refresh focusing on sell token:", sellTokenAddress);
+                    await refreshBalances();
+                    
+                    // Manually update the balance cache as a last resort
+                    const sellBalance = tokenBalances[sellTokenAddress]?.balance;
+                    if (sellBalance !== undefined) {
+                      balanceCacheRef.current[sellTokenAddress] = {
+                        balance: sellBalance,
+                        timestamp: Date.now()
+                      };
+                      console.log("Updated sell token in cache:", sellBalance.toString());
+                    }
+                    
+                    // Finally stop the loading state
+                    setIsSwapping(false);
+                  } catch (error) {
+                    console.error("Error in final refresh:", error);
+                    setIsSwapping(false);
+                  }
+                }, 3000);
+              } catch (error) {
+                console.error("Error in additional refresh:", error);
+                setIsSwapping(false);
+              }
+            }, 2000);
+          } catch (error) {
+            console.error("Error refreshing balances:", error);
+            setIsSwapping(false);
+          }
+        }, 1000);
       }
       
       setError("");
@@ -530,9 +637,8 @@ export const SwapCard = () => {
                       : "rgba(255, 255, 255, 0.6)",
                   }}
                 >
-                  Balance: {isSwapping ? "Loading..." : (sellBalance !== undefined 
-                    ? formatBalance(sellBalance, sellToken.decimal) 
-                    : "Loading...")}
+                  Balance: {isSwapping || balancesLoading || isRefreshing ? "Loading..." : 
+                    formatBalance(sellBalance || 0n, sellToken.decimal)}
                 </Typography>
               )}
               {!isSwapping && sellBalance !== undefined && sellBalance > 0n && (
@@ -646,9 +752,8 @@ export const SwapCard = () => {
             {/* Buy token balance display */}
             {buyToken && (
               <Typography sx={{ color: "rgba(255, 255, 255, 0.6)" }}>
-                Balance: {isSwapping ? "Loading..." : (buyBalance !== undefined 
-                  ? formatBalance(buyBalance, buyToken.decimal) 
-                  : "Loading...")}
+                Balance: {isSwapping || balancesLoading || isRefreshing ? "Loading..." : 
+                  formatBalance(buyBalance || 0n, buyToken.decimal)}
               </Typography>
             )}
           </Box>
@@ -733,7 +838,8 @@ export const SwapCard = () => {
             isAmountExceedingBalance || 
             (tradeStatus === 'submitted') ||
             (useGasless && !isGaslessCompatible) ||
-            isSwapping
+            isSwapping ||
+            balancesLoading
           }
           onClick={handleSwap}
           sx={{
