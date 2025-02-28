@@ -10,6 +10,7 @@ import {
   size,
   type Hex,
   type Chain,
+  erc20Abi,
 } from 'viem';
 import { Token } from './useTokens';
 import { splitSignature } from '../utils/signature';
@@ -73,29 +74,14 @@ export const use0x = () => {
 
       const tokenContract = {
         address: tokenAddress,
-        abi: [
-          {
-            constant: false,
-            inputs: [
-              { name: '_spender', type: 'address' },
-              { name: '_value', type: 'uint256' }
-            ],
-            name: 'approve',
-            outputs: [{ name: '', type: 'bool' }],
-            payable: false,
-            stateMutability: 'nonpayable',
-            type: 'function'
-          }
-        ],
+        abi: erc20Abi
       };
 
-      const { request } = await publicClient.simulateContract({
+      const hash = await walletClient.writeContract({
         ...tokenContract,
         functionName: 'approve',
         args: [spender, maxUint256]
       });
-
-      const hash = await walletClient.writeContract(request);
       await publicClient.waitForTransactionReceipt({ hash });
 
       return true;
