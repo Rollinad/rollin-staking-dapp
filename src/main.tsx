@@ -11,6 +11,7 @@ import { SnackbarProvider } from "./contexts/SnackbarContext";
 import { App } from "./App";
 import { config } from "./config/chain";
 import theme from "./theme";
+import { WalletSyncProvider } from "./contexts/WalletSyncContext";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./styles/fonts.css";
 
@@ -39,14 +40,16 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               loginMethods: ["twitter"],
             }}
           >
-            <BrowserRouter>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <SnackbarProvider>
-                  <App />
-                </SnackbarProvider>
-              </ThemeProvider>
-            </BrowserRouter>
+            <WalletSyncProvider>
+              <BrowserRouter>
+                <ThemeProvider theme={theme}>
+                  <CssBaseline />
+                  <SnackbarProvider>
+                    <App />
+                  </SnackbarProvider>
+                </ThemeProvider>
+              </BrowserRouter>
+            </WalletSyncProvider>
           </PrivyProvider>
         </RainbowKitProvider>
       </QueryClientProvider>

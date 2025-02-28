@@ -17,8 +17,11 @@ import {
 } from "@mui/material";
 import { usePrivy } from "@privy-io/react-auth";
 import TwitterIcon from "@mui/icons-material/Twitter";
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useState, useEffect } from "react";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useState, useEffect, FC } from "react";
+import { useAccount } from "wagmi";
+import { useWalletSync } from "../contexts/WalletSyncContext";
+import { useSnackbar } from "../contexts/SnackbarContext";
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-paper": {
@@ -76,21 +79,194 @@ const StyledButton = styled(Button)(() => ({
   },
 }));
 
+interface TwitterConnectButtonProps {
+  hasTwitterLinked: boolean;
+  twitterUsername: string;
+  twitterAvatarUrl: string;
+  onClick: () => void;
+  showModal: () => void;
+}
+
+// Twitter connect button that appears in the header
+const TwitterConnectButton: FC<TwitterConnectButtonProps> = ({
+  hasTwitterLinked,
+  twitterUsername,
+  twitterAvatarUrl,
+  onClick,
+  showModal,
+}) => {
+  const isMobile = useMediaQuery("(max-width:600px)");
+  const { isTwitterLinkedToAnotherWallet } = useWalletSync();
+
+  console.log(
+    `isTwitterLinkedToAnotherWallet ${isTwitterLinkedToAnotherWallet}`
+  );
+
+  const commonButtonStyles = {
+    backgroundColor: "rgba(29, 161, 242, 0.15)",
+    backdropFilter: "blur(5px)",
+    color: "#ffffff",
+    padding: isMobile ? "8px 12px" : "12px 20px",
+    borderRadius: "12px",
+    border: "1px solid rgba(29, 161, 242, 0.4)",
+    cursor:
+      isTwitterLinkedToAnotherWallet && !hasTwitterLinked
+        ? "not-allowed"
+        : "pointer",
+    fontSize: isMobile ? "14px" : "16px",
+    fontWeight: "500",
+    transition: "all 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    opacity: isTwitterLinkedToAnotherWallet && !hasTwitterLinked ? 0.6 : 1,
+  };
+
+  return hasTwitterLinked ? (
+    <Tooltip title={`@${twitterUsername}`}>
+      <div
+        style={commonButtonStyles}
+        onClick={showModal}
+        onMouseOver={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(29, 161, 242, 0.25)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(29, 161, 242, 0.15)";
+        }}
+      >
+        {twitterAvatarUrl ? (
+          <Avatar
+            src={twitterAvatarUrl}
+            alt={twitterUsername}
+            sx={{
+              width: 20,
+              height: 20,
+              border: "2px solid #1DA1F2",
+            }}
+          />
+        ) : (
+          <Avatar sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}>
+            <TwitterIcon sx={{ fontSize: isMobile ? "18px" : "20px" }} />
+          </Avatar>
+        )}
+        {!isMobile && (
+          <span style={{ whiteSpace: "nowrap" }}>@{twitterUsername}</span>
+        )}
+      </div>
+    </Tooltip>
+  ) : (
+    <Tooltip
+      title={
+        isTwitterLinkedToAnotherWallet
+          ? "X account already linked to another wallet"
+          : "Connect your X account"
+      }
+    >
+      <div
+        onClick={isTwitterLinkedToAnotherWallet ? () => {} : onClick}
+        style={commonButtonStyles}
+        onMouseOver={(e) => {
+          if (!isTwitterLinkedToAnotherWallet) {
+            e.currentTarget.style.backgroundColor = "rgba(29, 161, 242, 0.25)";
+          }
+        }}
+        onMouseOut={(e) => {
+          if (!isTwitterLinkedToAnotherWallet) {
+            e.currentTarget.style.backgroundColor = "rgba(29, 161, 242, 0.15)";
+          }
+        }}
+      >
+        <TwitterIcon style={{ fontSize: isMobile ? "18px" : "20px" }} />
+        {!isMobile && "Connect X"}
+      </div>
+    </Tooltip>
+  );
+};
+
 export const CustomConnectButton = () => {
   const isMobile = useMediaQuery("(max-width:600px)");
   const isTablet = useMediaQuery("(max-width:900px)");
   const { user, linkTwitter } = usePrivy();
   const [twitterModalOpen, setTwitterModalOpen] = useState(false);
+  const { address } = useAccount();
+  const { showSnackbar } = useSnackbar();
+  const { isTwitterLinkedToAnotherWallet, twitterLinkedAddress } =
+    useWalletSync();
+
+    // Show an information message when we detect Twitter linked to another address
+    // but don't force the user to take any action
+    useEffect(() => {
+      if (isTwitterLinkedToAnotherWallet && twitterLinkedAddress) {
+        showSnackbar("X account linked to another address. You can continue without X or connect a different X account.", "info");
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isTwitterLinkedToAnotherWallet, twitterLinkedAddress]);
 
   // Check if user has Twitter linked
   const hasTwitterLinked = user?.linkedAccounts?.some(
     (account) => account.type === "twitter_oauth"
   );
-  
+
   // Get Twitter profile information
-  const twitterAccount = user?.linkedAccounts?.find(account => account.type === "twitter_oauth");
-  const twitterUsername = twitterAccount?.username || '';
-  const twitterAvatarUrl = twitterAccount?.profilePictureUrl || '';
+  const twitterAccount = user?.linkedAccounts?.find(
+    (account) => account.type === "twitter_oauth"
+  );
+  const twitterUsername = twitterAccount?.username || "";
+  const twitterAvatarUrl = twitterAccount?.profilePictureUrl || "";
+
+  // Handle Twitter connect with checks for existing links
+  const handleTwitterConnect = async () => {
+    if (!address) {
+      showSnackbar("Please connect your wallet first before connecting Twitter.", "warning");
+      return;
+    }
+
+    if (isTwitterLinkedToAnotherWallet) {
+      showSnackbar(
+        `This X account is already linked to another wallet (${twitterLinkedAddress?.slice(
+          0,
+          6
+        )}...${twitterLinkedAddress?.slice(
+          -4
+        )}). Please use that wallet instead.`,
+        "error"
+      );
+      return;
+    }
+
+    try {
+      if (!user || !user.id) {
+        console.log("Waiting for Privy authentication to complete...");
+        // Wait for Privy authentication to complete
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while ((!user || !user.id) && attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          attempts++;
+          console.log(
+            `Waiting for Privy auth... Attempt ${attempts}/${maxAttempts}`
+          );
+        }
+
+        if (!user || !user.id) {
+          showSnackbar(
+            "Please try connecting again. Make sure your wallet is connected first.",
+            "warning"
+          );
+          return;
+        }
+      }
+
+      linkTwitter();
+    } catch (error) {
+      console.error("Error linking Twitter:", error);
+      showSnackbar(
+        "There was an error connecting your X account. Please try again.",
+        "error"
+      );
+    }
+  };
 
   // Add event listener to open Twitter modal from other components
   useEffect(() => {
@@ -106,10 +282,17 @@ export const CustomConnectButton = () => {
   return (
     <>
       {/* Twitter Connection Modal */}
-      <StyledDialog open={twitterModalOpen} onClose={() => setTwitterModalOpen(false)} maxWidth="sm" fullWidth>
+      <StyledDialog
+        open={twitterModalOpen}
+        onClose={() => setTwitterModalOpen(false)}
+        maxWidth='sm'
+        fullWidth
+      >
         <DialogTitle>
-          <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
-            {hasTwitterLinked ? "Twitter Account Connected" : "Connect Twitter Account"}
+          <Typography variant='h6' sx={{ color: "white", fontWeight: 600 }}>
+            {hasTwitterLinked
+              ? "Twitter Account Connected"
+              : "Connect Twitter Account"}
           </Typography>
         </DialogTitle>
         <DialogContent>
@@ -118,29 +301,40 @@ export const CustomConnectButton = () => {
               <>
                 <StyledInfoCard>
                   <CardContent>
-                    <Stack direction="row" spacing={2} alignItems="center">
+                    <Stack direction='row' spacing={2} alignItems='center'>
                       {twitterAvatarUrl ? (
                         <Avatar
                           src={twitterAvatarUrl}
                           alt={twitterUsername}
-                          sx={{ 
-                            width: 60, 
+                          sx={{
+                            width: 60,
                             height: 60,
-                            border: '2px solid #1DA1F2'
+                            border: "2px solid #1DA1F2",
                           }}
                         />
                       ) : (
-                        <Avatar sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}>
+                        <Avatar
+                          sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}
+                        >
                           <TwitterIcon sx={{ fontSize: 30 }} />
                         </Avatar>
                       )}
                       <Box>
-                        <Typography variant="h6" sx={{ color: "white" }}>
+                        <Typography variant='h6' sx={{ color: "white" }}>
                           @{twitterUsername}
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                          <CheckCircleIcon fontSize="small" sx={{ color: "#4CAF50", mr: 0.5 }} />
-                          <Typography variant="body2" sx={{ color: "#4CAF50" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mt: 0.5,
+                          }}
+                        >
+                          <CheckCircleIcon
+                            fontSize='small'
+                            sx={{ color: "#4CAF50", mr: 0.5 }}
+                          />
+                          <Typography variant='body2' sx={{ color: "#4CAF50" }}>
                             Verified
                           </Typography>
                         </Box>
@@ -151,21 +345,34 @@ export const CustomConnectButton = () => {
 
                 <StyledCard>
                   <CardContent>
-                    <Typography variant="subtitle1" sx={{ color: "white", mb: 1 }}>
+                    <Typography
+                      variant='subtitle1'
+                      sx={{ color: "white", mb: 1 }}
+                    >
                       Twitter Account Benefits
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
-                      Your Twitter account is connected and can be used for DAO funding features.
-                      This helps build trust with other community members and enhances your
-                      reputation within the platform.
+                    <Typography
+                      variant='body2'
+                      sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+                    >
+                      Your Twitter account is connected and can be used for DAO
+                      funding features. This helps build trust with other
+                      community members and enhances your reputation within the
+                      platform.
                     </Typography>
                   </CardContent>
                 </StyledCard>
 
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <Chip
                     icon={<TwitterIcon style={{ color: "#1DA1F2" }} />}
-                    label="Twitter Connected"
+                    label='Twitter Connected'
                     sx={{
                       bgcolor: "rgba(29, 161, 242, 0.2)",
                       color: "#1DA1F2",
@@ -178,15 +385,15 @@ export const CustomConnectButton = () => {
                     }}
                   />
                   <Button
-                    variant="outlined"
+                    variant='outlined'
                     onClick={() => setTwitterModalOpen(false)}
                     sx={{
                       color: "white",
                       borderColor: "rgba(255, 255, 255, 0.3)",
-                      '&:hover': {
+                      "&:hover": {
                         borderColor: "white",
                         bgcolor: "rgba(255, 255, 255, 0.05)",
-                      }
+                      },
                     }}
                   >
                     Close
@@ -197,21 +404,26 @@ export const CustomConnectButton = () => {
               <>
                 <StyledInfoCard>
                   <CardContent sx={{ textAlign: "center", py: 3 }}>
-                    <Avatar sx={{ 
-                      width: 70, 
-                      height: 70, 
-                      bgcolor: "#1DA1F2", 
-                      margin: "0 auto",
-                      mb: 2 
-                    }}>
+                    <Avatar
+                      sx={{
+                        width: 70,
+                        height: 70,
+                        bgcolor: "#1DA1F2",
+                        margin: "0 auto",
+                        mb: 2,
+                      }}
+                    >
                       <TwitterIcon sx={{ fontSize: 40 }} />
                     </Avatar>
-                    
-                    <Typography variant="h5" sx={{ color: "white", mb: 1 }}>
+
+                    <Typography variant='h5' sx={{ color: "white", mb: 1 }}>
                       Connect Your Twitter
                     </Typography>
-                    
-                    <Typography variant="body1" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+
+                    <Typography
+                      variant='body1'
+                      sx={{ color: "rgba(255, 255, 255, 0.8)" }}
+                    >
                       Link your Twitter account to enhance your DAO experience
                     </Typography>
                   </CardContent>
@@ -219,28 +431,49 @@ export const CustomConnectButton = () => {
 
                 <StyledCard>
                   <CardContent>
-                    <Typography variant="subtitle1" sx={{ color: "white", mb: 1.5 }}>
+                    <Typography
+                      variant='subtitle1'
+                      sx={{ color: "white", mb: 1.5 }}
+                    >
                       Benefits of Connecting Twitter
                     </Typography>
-                    
+
                     <Stack spacing={1.5}>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <CheckCircleIcon fontSize="small" sx={{ color: "#4CAF50", mr: 1 }} />
-                        <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                        <CheckCircleIcon
+                          fontSize='small'
+                          sx={{ color: "#4CAF50", mr: 1 }}
+                        />
+                        <Typography
+                          variant='body2'
+                          sx={{ color: "rgba(255, 255, 255, 0.8)" }}
+                        >
                           Establish a recognizable identity in the DAO
                         </Typography>
                       </Box>
-                      
+
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <CheckCircleIcon fontSize="small" sx={{ color: "#4CAF50", mr: 1 }} />
-                        <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                        <CheckCircleIcon
+                          fontSize='small'
+                          sx={{ color: "#4CAF50", mr: 1 }}
+                        />
+                        <Typography
+                          variant='body2'
+                          sx={{ color: "rgba(255, 255, 255, 0.8)" }}
+                        >
                           Gain higher trust scores for funding proposals
                         </Typography>
                       </Box>
-                      
+
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <CheckCircleIcon fontSize="small" sx={{ color: "#4CAF50", mr: 1 }} />
-                        <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                        <CheckCircleIcon
+                          fontSize='small'
+                          sx={{ color: "#4CAF50", mr: 1 }}
+                        />
+                        <Typography
+                          variant='body2'
+                          sx={{ color: "rgba(255, 255, 255, 0.8)" }}
+                        >
                           Connect with other members easily
                         </Typography>
                       </Box>
@@ -251,184 +484,192 @@ export const CustomConnectButton = () => {
                 <StyledButton
                   fullWidth
                   startIcon={<TwitterIcon />}
-                  onClick={linkTwitter}
+                  onClick={handleTwitterConnect}
+                  disabled={isTwitterLinkedToAnotherWallet}
                 >
                   Connect Twitter Account
                 </StyledButton>
+                {isTwitterLinkedToAnotherWallet && (
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      color: "#ff9800",
+                      mt: 1,
+                      display: "block",
+                      textAlign: "center",
+                    }}
+                  >
+                    This Twitter account is already linked to another wallet
+                  </Typography>
+                )}
               </>
             )}
           </Stack>
         </DialogContent>
       </StyledDialog>
 
-      <ConnectButton.Custom>
-        {({
-          account,
-          chain,
-          openAccountModal,
-          openChainModal,
-          openConnectModal,
-          mounted,
-        }) => {
-          const commonButtonStyles = {
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-            backdropFilter: "blur(5px)",
-            color: "#ffffff",
-            padding: isMobile ? "8px 12px" : "12px 20px",
-            borderRadius: "12px",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            cursor: "pointer",
-            fontSize: isMobile ? "14px" : "16px",
-            fontWeight: "500",
-            transition: "all 0.2s ease",
-          };
+      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        {/* X/Twitter Connect Button */}
+        <TwitterConnectButton
+          hasTwitterLinked={hasTwitterLinked ?? false}
+          twitterUsername={twitterUsername}
+          twitterAvatarUrl={twitterAvatarUrl}
+          onClick={handleTwitterConnect}
+          showModal={() => setTwitterModalOpen(true)}
+        />
 
-          return (
-            <div
-              {...(!mounted && {
-                "aria-hidden": true,
-                style: {
-                  opacity: 0,
-                  pointerEvents: "none",
-                  userSelect: "none",
-                },
-              })}
-            >
-              {(() => {
-                if (!mounted || !account || !chain) {
-                  return (
-                    <button
-                      onClick={openConnectModal}
-                      type='button'
-                      style={commonButtonStyles}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.2)";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.1)";
-                      }}
-                    >
-                      Connect Wallet
-                    </button>
-                  );
-                }
+        {/* Wallet Connect Button */}
+        <ConnectButton.Custom>
+          {({
+            account,
+            chain,
+            openAccountModal,
+            openChainModal,
+            openConnectModal,
+            mounted,
+          }) => {
+            const commonButtonStyles = {
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              backdropFilter: "blur(5px)",
+              color: "#ffffff",
+              padding: isMobile ? "8px 12px" : "12px 20px",
+              borderRadius: "12px",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              cursor: "pointer",
+              fontSize: isMobile ? "14px" : "16px",
+              fontWeight: "500",
+              transition: "all 0.2s ease",
+            };
 
-                return (
-                  <div
-                    style={{ display: "flex", gap: isMobile ? "6px" : "12px" }}
-                  >
-                    <button
-                      onClick={openChainModal}
-                      type='button'
-                      style={{
-                        ...commonButtonStyles,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        minWidth: "fit-content",
-                        padding: isMobile ? "8px" : "12px 20px",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.2)";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.1)";
-                      }}
-                    >
-                      {chain.hasIcon && (
-                        <div
-                          style={{
-                            background: chain.iconBackground,
-                            width: isMobile ? "20px" : "24px",
-                            height: isMobile ? "20px" : "24px",
-                            borderRadius: "50%",
-                            overflow: "hidden",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {chain.iconUrl && (
-                            <img
-                              alt={chain.name ?? "Chain icon"}
-                              src={chain.iconUrl}
-                              style={{ width: "100%", height: "100%" }}
-                            />
-                          )}
-                        </div>
-                      )}
-                      {!isMobile && chain.name}
-                    </button>
-
-                    <button
-                      onClick={openAccountModal}
-                      type='button'
-                      style={{
-                        ...commonButtonStyles,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        minWidth: "fit-content",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.2)";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(255, 255, 255, 0.1)";
-                      }}
-                    >
-                      {!isMobile && (
-                        <span style={{ whiteSpace: "nowrap" }}>
-                          {account.displayBalance ?? 0}
-                        </span>
-                      )}
-                      <span
-                        style={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: isMobile
-                            ? "100px"
-                            : isTablet
-                            ? "120px"
-                            : "140px",
+            return (
+              <div
+                {...(!mounted && {
+                  "aria-hidden": true,
+                  style: {
+                    opacity: 0,
+                    pointerEvents: "none",
+                    userSelect: "none",
+                  },
+                })}
+              >
+                {(() => {
+                  if (!mounted || !account || !chain) {
+                    return (
+                      <button
+                        onClick={openConnectModal}
+                        type='button'
+                        style={commonButtonStyles}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255, 255, 255, 0.2)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255, 255, 255, 0.1)";
                         }}
                       >
-                        {account.displayName}
-                      </span>
-                      
-                      {/* Show Twitter profile if linked */}
-                      {hasTwitterLinked && (
-                        <Tooltip title={`@${twitterUsername}`}>
-                          <Avatar
-                            src={twitterAvatarUrl}
-                            alt={twitterUsername}
-                            sx={{ 
-                              width: 24, 
-                              height: 24, 
-                              ml: 1,
-                              border: '1px solid #1DA1F2',
-                              cursor: 'pointer'
+                        Connect Wallet
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: isMobile ? "6px" : "12px",
+                      }}
+                    >
+                      <button
+                        onClick={openChainModal}
+                        type='button'
+                        style={{
+                          ...commonButtonStyles,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          minWidth: "fit-content",
+                          padding: isMobile ? "8px" : "12px 20px",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255, 255, 255, 0.2)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255, 255, 255, 0.1)";
+                        }}
+                      >
+                        {chain.hasIcon && (
+                          <div
+                            style={{
+                              background: chain.iconBackground,
+                              width: isMobile ? "20px" : "24px",
+                              height: isMobile ? "20px" : "24px",
+                              borderRadius: "50%",
+                              overflow: "hidden",
+                              flexShrink: 0,
                             }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTwitterModalOpen(true);
-                            }}
-                          />
-                        </Tooltip>
-                      )}
-                    </button>
-                  </div>
-                );
-              })()}
-            </div>
-          );
-        }}
-      </ConnectButton.Custom>
+                          >
+                            {chain.iconUrl && (
+                              <img
+                                alt={chain.name ?? "Chain icon"}
+                                src={chain.iconUrl}
+                                style={{ width: "100%", height: "100%" }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        {!isMobile && chain.name}
+                      </button>
+
+                      <button
+                        onClick={openAccountModal}
+                        type='button'
+                        style={{
+                          ...commonButtonStyles,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          minWidth: "fit-content",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255, 255, 255, 0.2)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255, 255, 255, 0.1)";
+                        }}
+                      >
+                        {!isMobile && (
+                          <span style={{ whiteSpace: "nowrap" }}>
+                            {account.displayBalance ?? 0}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: isMobile
+                              ? "100px"
+                              : isTablet
+                              ? "120px"
+                              : "140px",
+                          }}
+                        >
+                          {account.displayName}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          }}
+        </ConnectButton.Custom>
+      </div>
     </>
   );
 };
