@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   useAccount,
   useBalance,
@@ -6,14 +5,15 @@ import {
   useSimulateContract,
   useWriteContract,
 } from "wagmi";
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
 import { ErrorMessage, StakeData } from "../types/staking";
 import { useState } from "react";
 import { formatEther } from "viem";
+import { STAKING_CONTRACT_ABI } from "../constants/staking/abi";
+import { STAKING_CONTRACT_ADDRESS } from "../constants";
 
 export function useStakingContract() {
   const { address: userAddress } = useAccount();
-  const { data: userBalance } = useBalance({
+  const { data: userBalance, refetch: refetchUserBalance } = useBalance({
     address: userAddress,
   });
 
@@ -31,20 +31,42 @@ export function useStakingContract() {
     amount: BigInt(0),
   });
 
-  const { data: registeredContracts } = useReadContract({
-    abi: STAKING_CONTRACT_ABI,
-    address: STAKING_CONTRACT_ADDRESS,
-    functionName: "getRegisteredContracts",
-  });
+  const { data: registeredContracts, refetch: refetchRegisteredContracts } =
+    useReadContract({
+      abi: STAKING_CONTRACT_ABI,
+      address: STAKING_CONTRACT_ADDRESS,
+      functionName: "getRegisteredContracts",
+    });
 
-  const { data: stakingData } = useReadContract({
+  const { data: allocationPercent, refetch: refetchAllocationPercent } =
+    useReadContract({
+      abi: STAKING_CONTRACT_ABI,
+      address: STAKING_CONTRACT_ADDRESS,
+      functionName: "getAllocationPercent",
+    }) as {
+      data: bigint | undefined;
+      refetch: () => Promise<{ data: bigint | undefined }>;
+    };
+
+  const { data: ownedStakingPools, refetch: refetchOwnedStakingPools } =
+    useReadContract({
+      abi: STAKING_CONTRACT_ABI,
+      address: STAKING_CONTRACT_ADDRESS,
+      functionName: "getOwnedStakingPools",
+      args: [userAddress],
+    });
+
+  const { data: stakingData, refetch: refetchStakingData } = useReadContract({
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_CONTRACT_ABI,
     functionName: "getStakingData",
     account: userAddress,
-  }) as { data: StakeData[] | undefined };
+  }) as {
+    data: StakeData[] | undefined;
+    refetch: () => Promise<{ data: StakeData[] | undefined }>;
+  };
 
-  const { data: poolFee } = useReadContract({
+  const { data: poolFee, refetch: refetchPoolFee } = useReadContract({
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_CONTRACT_ABI,
     functionName: "getPoolFee",
@@ -55,21 +77,22 @@ export function useStakingContract() {
       return { isValid: false, error: "Unable to validate balance" };
     }
 
-    // Ensure both values are BigInt for comparison
     const balanceValue = userBalance.value;
     const feeValue = poolFee as bigint;
 
     if (balanceValue < feeValue) {
       return {
         isValid: false,
-        error: `Insufficient balance for pool fee. Required: ${formatEther(feeValue)} MON`,
+        error: `Insufficient balance for pool fee. Required: ${formatEther(
+          feeValue
+        )} MON`,
       };
     }
 
     return { isValid: true };
   };
 
-  const { writeContract, isPending, error } = useWriteContract();
+  const { writeContract, isPending, error, data } = useWriteContract();
 
   const { data: createPoolSimulation, error: createPoolSimError } =
     useSimulateContract({
@@ -107,7 +130,7 @@ export function useStakingContract() {
       return "Staking pool already exists for this token";
     }
     if (errorMessage.includes("Insufficient allocation")) {
-      return "Insufficient token allocation for pool creation";
+      return "Insufficient token allocation for pool creation. You need to own the required minimum percentage of the token's total supply.";
     }
     if (errorMessage.includes("Insufficient fee")) {
       return "Insufficient fee provided for pool creation";
@@ -119,17 +142,26 @@ export function useStakingContract() {
     return `Transaction failed: ${errorMessage}`;
   };
 
+  const refetchAllData = async () => {
+    await Promise.all([
+      refetchUserBalance(),
+      refetchRegisteredContracts(),
+      refetchAllocationPercent(),
+      refetchOwnedStakingPools(),
+      refetchStakingData(),
+      refetchPoolFee(),
+    ]);
+  };
+
   const createPool = async (tokenAddress: string) => {
     try {
-      const validation = validatePoolFee();
-      if (!validation.isValid) {
-        throw new Error(validation.error);
+      const feeValidation = validatePoolFee();
+      if (!feeValidation.isValid) {
+        throw new Error(feeValidation.error);
       }
 
-      // Set params and wait for simulation to update
       setCreatePoolParams({ tokenAddress });
 
-      // Check simulation results
       if (createPoolSimError) {
         throw new Error(createPoolSimError.message);
       }
@@ -138,9 +170,10 @@ export function useStakingContract() {
         throw new Error("Failed to simulate transaction");
       }
 
-      return await writeContract(createPoolSimulation.request);
+      writeContract(createPoolSimulation.request);
     } catch (err) {
       const errorMessage = handleContractError(err as ErrorMessage);
+      console.log(`errorMessage ${JSON.stringify(errorMessage)}`);
       throw new Error(errorMessage);
     }
   };
@@ -150,12 +183,17 @@ export function useStakingContract() {
     duration: bigint,
     apy: bigint
   ) => {
-    return writeContract({
-      abi: STAKING_CONTRACT_ABI,
-      address: STAKING_CONTRACT_ADDRESS,
-      functionName: "addStakingOption",
-      args: [tokenAddress, duration, apy],
-    });
+    try {
+      writeContract({
+        abi: STAKING_CONTRACT_ABI,
+        address: STAKING_CONTRACT_ADDRESS,
+        functionName: "addStakingOption",
+        args: [tokenAddress, duration, apy],
+      });
+    } catch (err) {
+      const errorMessage = handleContractError(err as ErrorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const stake = async (
@@ -164,10 +202,8 @@ export function useStakingContract() {
     amount: bigint
   ) => {
     try {
-      // Set params and wait for simulation to update
       setStakeParams({ tokenAddress, stakingOptionId, amount });
 
-      // Check simulation results
       if (stakeSimError) {
         throw new Error(stakeSimError.message);
       }
@@ -176,15 +212,15 @@ export function useStakingContract() {
         throw new Error("Failed to simulate transaction");
       }
 
-      return writeContract({
+      writeContract({
         abi: STAKING_CONTRACT_ABI,
         address: STAKING_CONTRACT_ADDRESS,
         functionName: "stake",
         args: [tokenAddress, stakingOptionId, amount],
-      });  
+      });
     } catch (err) {
       const errorMessage = handleContractError(err as ErrorMessage);
-      console.log(`error staking ${errorMessage}`)
+      console.log(`error staking ${errorMessage}`);
       throw new Error(errorMessage);
     }
   };
@@ -194,12 +230,17 @@ export function useStakingContract() {
     stakingOptionId: string,
     amount: bigint
   ) => {
-    return writeContract({
-      abi: STAKING_CONTRACT_ABI,
-      address: STAKING_CONTRACT_ADDRESS,
-      functionName: "unstake",
-      args: [tokenAddress, stakingOptionId, amount],
-    });
+    try {
+      writeContract({
+        abi: STAKING_CONTRACT_ABI,
+        address: STAKING_CONTRACT_ADDRESS,
+        functionName: "unstake",
+        args: [tokenAddress, stakingOptionId, amount],
+      });
+    } catch (err) {
+      const errorMessage = handleContractError(err as ErrorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const unstakeFreeze = async (
@@ -207,35 +248,66 @@ export function useStakingContract() {
     stakingOptionId: string,
     amount: bigint
   ) => {
-    return writeContract({
-      abi: STAKING_CONTRACT_ABI,
-      address: STAKING_CONTRACT_ADDRESS,
-      functionName: "unstakeFreeze",
-      args: [tokenAddress, stakingOptionId, amount],
-    });
+    try {
+      writeContract({
+        abi: STAKING_CONTRACT_ABI,
+        address: STAKING_CONTRACT_ADDRESS,
+        functionName: "unstakeFreeze",
+        args: [tokenAddress, stakingOptionId, amount],
+      });
+    } catch (err) {
+      const errorMessage = handleContractError(err as ErrorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const withdrawFrozen = async (tokenAddress: string) => {
-    return writeContract({
-      abi: STAKING_CONTRACT_ABI,
-      address: STAKING_CONTRACT_ADDRESS,
-      functionName: "withdrawFrozen",
-      args: [tokenAddress],
-    });
+    try {
+      writeContract({
+        abi: STAKING_CONTRACT_ABI,
+        address: STAKING_CONTRACT_ADDRESS,
+        functionName: "withdrawFrozen",
+        args: [tokenAddress],
+      });
+    } catch (err) {
+      const errorMessage = handleContractError(err as ErrorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
+  const hasOwnedPools =
+    !!ownedStakingPools && (ownedStakingPools as any[]).length > 0;
+
   return {
+    // Data
     registeredContracts,
     stakingData,
+    poolFee,
+    ownedStakingPools,
+    hasOwnedPools,
+    allocationPercent,
+
+    // Action functions
     createPool,
     createStakingOption,
     stake,
     unstake,
     unstakeFreeze,
     withdrawFrozen,
+    validatePoolFee,
+
+    // Status
     isPending,
     error,
-    poolFee,
-    validatePoolFee
+    data,
+
+    // Refetch functions
+    refetchUserBalance,
+    refetchRegisteredContracts,
+    refetchAllocationPercent,
+    refetchOwnedStakingPools,
+    refetchStakingData,
+    refetchPoolFee,
+    refetchAllData,
   };
 }

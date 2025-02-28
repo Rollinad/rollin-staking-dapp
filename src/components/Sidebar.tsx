@@ -15,6 +15,7 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import CampaignIcon from "@mui/icons-material/Campaign"; // Icon for DAO Funding
 import MenuIcon from "@mui/icons-material/Menu";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Assessment } from "@mui/icons-material";
@@ -106,6 +107,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ onCollapse }: SidebarProps) => {
   const [stakeOpen, setStakeOpen] = useState(true);
+  const [fundingOpen, setFundingOpen] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
@@ -128,6 +130,14 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
       setSidebarOpen(true);
     } else {
       setStakeOpen(!stakeOpen);
+    }
+  };
+
+  const handleFundingClick = () => {
+    if (!isMobile && !sidebarOpen) {
+      setSidebarOpen(true);
+    } else {
+      setFundingOpen(!fundingOpen);
     }
   };
 
@@ -173,6 +183,7 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
               />
             )}
           </StyledListItemButton>
+          
           <StyledListItemButton
             onClick={() => handleNavigation("/analytics")}
             selected={location.pathname.startsWith("/analytics")}
@@ -214,6 +225,7 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
             )}
             {sidebarOpen && (stakeOpen ? <ExpandLess /> : <ExpandMore />)}
           </StyledListItemButton>
+          
           <Collapse in={stakeOpen && sidebarOpen} timeout='auto' unmountOnExit>
             <List component='div' disablePadding>
               <StyledSubListItemButton
@@ -253,6 +265,109 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
                 <StyledListItemText
                   primary='Create Staking Option'
                   secondary='Create Option for Staking Pool'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/stake/deposit")}
+                onClick={() => handleNavigation("/stake/deposit")}
+              >
+                <StyledListItemText
+                  primary='Deposit Rewards'
+                  secondary='Add tokens for staking rewards'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+            </List>
+          </Collapse>
+          
+          {/* New DAO Funding Section */}
+          <StyledListItemButton
+            onClick={handleFundingClick}
+            selected={location.pathname.startsWith("/funding")}
+          >
+            <StyledListItemIcon>
+              <CampaignIcon />
+            </StyledListItemIcon>
+            {sidebarOpen && (
+              <StyledListItemText
+                primary='DAO Funding'
+                secondary='Create & fund proposals'
+                sx={{
+                  "& .MuiListItemText-secondary": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: "0.7rem",
+                  },
+                }}
+              />
+            )}
+            {sidebarOpen && (fundingOpen ? <ExpandLess /> : <ExpandMore />)}
+          </StyledListItemButton>
+          
+          <Collapse in={fundingOpen && sidebarOpen} timeout='auto' unmountOnExit>
+            <List component='div' disablePadding>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/funding")}
+                onClick={() => handleNavigation("/funding")}
+              >
+                <StyledListItemText
+                  primary='All Proposals'
+                  secondary='Browse funding proposals'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/funding/my-proposals")}
+                onClick={() => handleNavigation("/funding/my-proposals")}
+              >
+                <StyledListItemText
+                  primary='My Proposals'
+                  secondary='View your created proposals'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/funding/create")}
+                onClick={() => handleNavigation("/funding/create")}
+              >
+                <StyledListItemText
+                  primary='Create Proposal'
+                  secondary='Start a new funding proposal'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/funding/contributions")}
+                onClick={() => handleNavigation("/funding/contributions")}
+              >
+                <StyledListItemText
+                  primary='My Contributions'
+                  secondary='Manage your contributions'
                   sx={{
                     "& .MuiListItemText-secondary": {
                       color: "rgba(255, 255, 255, 0.7)",

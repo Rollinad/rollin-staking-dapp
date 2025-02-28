@@ -44,6 +44,7 @@ export const App = () => {
   const isConnected = wagmiConnected || (authenticated && wallets.length > 0);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
   const isMobile = useMediaQuery('(max-width:600px)');
 
   useEffect(() => {
@@ -51,6 +52,19 @@ export const App = () => {
       setSidebarCollapsed(true);
     }
   }, [isMobile]);
+
+  // Check if user is registered
+  useEffect(() => {
+    const checkUserRegistration = async () => {
+      if (isConnected && address) {
+        // This will need to be implemented with your contract integration
+        // For now, we'll just set it to false
+        setIsRegistered(false);
+      }
+    };
+    
+    checkUserRegistration();
+  }, [isConnected, address]);
 
   const handleSidebarCollapse = (collapsed: boolean) => {
     setSidebarCollapsed(collapsed);
