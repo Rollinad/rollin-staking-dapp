@@ -107,7 +107,8 @@ export const SwapCard = () => {
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [buyDialogOpen, setBuyDialogOpen] = useState(false);
   const [error, setError] = useState("");
-  const [isSwapping, setIsSwapping] = useState(false); // Track when tokens are being swapped
+  const [isSwapping, setIsSwapping] = useState(false);
+  const [shouldSwapBack, setShouldSwapBack] = useState(false);
 
   // Balance cache to preserve token balances during swaps
   const balanceCacheRef = useRef<TokenBalanceCache>({});
@@ -206,9 +207,6 @@ export const SwapCard = () => {
         };
       }
     });
-
-    console.log("Cache updated:", balanceCacheRef.current);
-    console.log("Current tokensData:", tokenBalances);
   }, [tokenBalances]);
 
   // Get sell and buy token balances with fallbacks from cache
@@ -263,9 +261,6 @@ export const SwapCard = () => {
 
     return balance;
   }, [buyToken, tokenBalances, isSwapping]);
-
-  console.log(`buybalance: ${buyBalance}`);
-  console.log(`sellbalance: ${sellBalance}`);
 
   // Format balance with maximum 6 decimal places
   const formatBalance = (balance: bigint, decimals: number) => {
@@ -324,7 +319,7 @@ export const SwapCard = () => {
   };
 
   // Swap tokens positions with improved data handling
-  const handleSwapTokens = () => {
+  const handleSwapTokens = useCallback(() => {
     if (!sellToken || !buyToken) return;
 
     setIsSwapping(true); // Start token swap - prevent balance display during transition
@@ -354,7 +349,14 @@ export const SwapCard = () => {
     setTimeout(() => {
       setIsSwapping(false);
     }, 500);
-  };
+  }, [buyToken, sellToken, statusUpdateInterval, tradeHash]);
+
+  useEffect(() => {
+    if (shouldSwapBack) {
+      handleSwapTokens();
+      setShouldSwapBack(false);
+    }
+  }, [handleSwapTokens, shouldSwapBack]);
 
   // Toggle gasless mode
   const handleToggleGasless = () => {
@@ -399,19 +401,18 @@ export const SwapCard = () => {
 
             // Clear balance cache
             balanceCacheRef.current = {};
+            handleSwapTokens();
 
             // Give blockchain time to update before refreshing balances
             setTimeout(async () => {
               try {
-                handleSwapTokens();
+                await refreshBalances();
+                setShouldSwapBack(true);
 
-                // Add longer and multiple delayed refreshes to catch the sell token update
                 setTimeout(async () => {
                   try {
-                    console.log("First additional balance refresh...");
                     await refreshBalances();
                   } catch (error) {
-                    console.error("Error in additional refresh:", error);
                     setIsSwapping(false);
                   }
                 }, 2000);
@@ -427,7 +428,7 @@ export const SwapCard = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [checkGaslessTradeStatus, statusUpdateInterval, refreshBalances]
+    [checkGaslessTradeStatus, statusUpdateInterval]
   );
 
   // Start polling for trade status
@@ -518,12 +519,10 @@ export const SwapCard = () => {
       );
 
       if (useGasless && isGaslessSwapResult(result)) {
-        // For gasless swaps, set the trade hash and start polling for status
         setTradeHash(result.tradeHash);
         setTradeStatus("submitted");
         startStatusPolling(result.tradeHash);
       } else {
-        // For regular swaps, reset form after successful swap and refresh token data
         setSellAmount("");
         setBuyAmount("");
 
@@ -532,17 +531,14 @@ export const SwapCard = () => {
 
         // Clear the balance cache to force a refresh
         balanceCacheRef.current = {};
+        handleSwapTokens();
 
-        // Give blockchain time to update before refreshing balances
         setTimeout(async () => {
           try {
-            handleSwapTokens();
-
-            // Add longer and multiple delayed refreshes to catch the sell token update
             setTimeout(async () => {
               try {
-                console.log("First additional balance refresh...");
                 await refreshBalances();
+                setShouldSwapBack(true);
               } catch (error) {
                 console.error("Error in additional refresh:", error);
                 setIsSwapping(false);
@@ -579,7 +575,6 @@ export const SwapCard = () => {
       sellToken.address.toLowerCase() ===
       "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
-    // You can add other conditions based on specific tokens or token features
     return !isNativeToken;
   }, [sellToken]);
 
