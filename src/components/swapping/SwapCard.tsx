@@ -236,7 +236,7 @@ export const SwapCard = () => {
     }
 
     return balance;
-  }, [sellToken, tokenBalances, isSwapping, isRefreshing]);
+  }, [sellToken, tokenBalances, isSwapping]);
 
   const buyBalance = useMemo(() => {
     if (!buyToken) return undefined;
@@ -262,7 +262,7 @@ export const SwapCard = () => {
     }
 
     return balance;
-  }, [buyToken, tokenBalances, isSwapping, isRefreshing]);
+  }, [buyToken, tokenBalances, isSwapping]);
 
   console.log(`buybalance: ${buyBalance}`);
   console.log(`sellbalance: ${sellBalance}`);
@@ -426,6 +426,7 @@ export const SwapCard = () => {
         console.error("Error checking trade status:", error);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [checkGaslessTradeStatus, statusUpdateInterval, refreshBalances]
   );
 

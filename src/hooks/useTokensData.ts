@@ -66,7 +66,7 @@ export const useTokensData = (tokenAddresses: Address[]) => {
         }
       }, 100);
     });
-  }, [refetchNative, balanceResults.refetch]);
+  }, [refetchNative, balanceResults]);
 
   // Force refresh whenever refreshCounter changes
   useEffect(() => {
@@ -83,7 +83,7 @@ export const useTokensData = (tokenAddresses: Address[]) => {
         setIsRefreshing(false);
       });
     }
-  }, [refreshCounter, refetchNative, balanceResults.refetch]);
+  }, [refreshCounter, refetchNative, balanceResults.refetch, balanceResults]);
 
   useEffect(() => {
     const newTokensData: Record<string, TokenData> = {};
