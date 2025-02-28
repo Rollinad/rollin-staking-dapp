@@ -39,7 +39,7 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
   contributionConfirming,
 }) => {
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} sx={{ padding: "24px" }}>
       <Grid item xs={12} md={6}>
         <Typography variant='h6' sx={{ color: "white", mb: 2 }}>
           Contributors

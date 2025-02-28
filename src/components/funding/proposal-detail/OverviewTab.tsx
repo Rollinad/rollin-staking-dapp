@@ -30,7 +30,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   tokenBalance,
 }) => {
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} sx={{ padding: "24px" }}>
       <Grid item xs={12} md={8}>
         <Typography variant='h6' sx={{ color: "white", mb: 2 }}>
           Project Details

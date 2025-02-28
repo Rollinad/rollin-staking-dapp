@@ -66,7 +66,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
 }) => {
   // Check if Twitter is linked
   const { user } = usePrivy();
-  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter');
+  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter_oauth');
   
   // Derived state
   const isLoading = contributionPending || contributionConfirming;
@@ -423,7 +423,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
   );
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} sx={{ padding: "24px" }}>
       <Grid item xs={12} md={6}>
         <Typography variant='h6' sx={{ color: "white", mb: 2 }}>
           Contribute to {proposalToken.tokenName}

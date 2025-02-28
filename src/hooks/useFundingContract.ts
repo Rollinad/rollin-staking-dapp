@@ -429,10 +429,7 @@ export function useProposalQueries() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalStatus",
-      args: proposalId ? [proposalId] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId] : [0n],
     });
 
     const formattedData = data
@@ -453,10 +450,7 @@ export function useProposalQueries() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalBasicDetails",
-      args: proposalId ? [proposalId] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId] : [0n],
     });
 
     const formattedData = data
@@ -480,10 +474,7 @@ export function useProposalQueries() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalTokenDetails",
-      args: proposalId ? [proposalId] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId] : [0n],
     });
 
     const formattedData = data
@@ -522,10 +513,7 @@ export function useContributorQueries() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getContributorsCounts",
-      args: proposalId ? [proposalId] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId] : [0n],
     });
 
     const formattedData = data
@@ -548,10 +536,7 @@ export function useContributorQueries() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getRequestingContributorsPaginated",
-      args: proposalId ? [proposalId, offset, limit] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId, offset, limit] : [0n, offset, limit],
     });
   };
 
@@ -565,10 +550,7 @@ export function useContributorQueries() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getApprovedContributorsPaginated",
-      args: proposalId ? [proposalId, offset, limit] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId, offset, limit] : [0n, offset, limit],
     });
 
     // Return data as-is, but with proper type assertion
@@ -627,10 +609,7 @@ export function useTokenBalances() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getCurrentTokenPrice",
-      args: proposalId ? [proposalId] : undefined,
-      query: {
-        enabled: !!proposalId,
-      },
+      args: proposalId ? [proposalId] : [0n],
     });
   };
 

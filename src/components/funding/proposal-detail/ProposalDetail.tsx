@@ -292,6 +292,10 @@ export const ProposalDetail: React.FC = () => {
     );
   }
 
+  console.log(`test ${proposalBasicData}`)
+  console.log(`test ${proposalTokenData}`)
+  console.log(`test ${proposalStatusData}`)
+
   // Handle errors if data is missing
   if (!proposalBasicData || !proposalTokenData || !proposalStatusData) {
     return (
@@ -331,6 +335,13 @@ export const ProposalDetail: React.FC = () => {
   const approvedContributors = approvedContributorsData as [ContributorInfo[], bigint] | null;
   const tokenBalance = tokenBalanceData as bigint | null;
   const tokenPrice = tokenPriceData as bigint | null;
+
+  console.log(`basicData ${basicData.creator}`)
+  console.log(`basicData ${basicData.currentAmount}`)
+  console.log(`basicData ${basicData.isApproved}`)
+  console.log(`basicData ${basicData.isClosed}`)
+  console.log(`basicData ${basicData.targetAmount}`)
+  console.log(`basicData ${basicData.tokensDeployed}`)
 
   // Calculate progress percentage
   const percentComplete =
