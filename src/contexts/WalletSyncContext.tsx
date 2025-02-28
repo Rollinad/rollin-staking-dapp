@@ -61,25 +61,6 @@ export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Monitor wallet connection changes and sync with Privy
   useEffect(() => {
-    // When wallet is connected via RainbowKit but not authenticated in Privy
-    if (isConnected && address && !authenticated) {
-      console.log(
-        "Wallet connected in RainbowKit but not in Privy, authenticating with Privy..."
-      );
-      // Attempt to authenticate with Privy using the connected wallet
-      const authenticateWithPrivy = async () => {
-        try {
-          // Use Privy's login method
-          login();
-          console.log("Successfully authenticated with Privy");
-        } catch (error) {
-          console.error("Error authenticating with Privy:", error);
-        }
-      };
-
-      authenticateWithPrivy();
-    }
-
     // Only run the effect if we have previous state to compare with
     if (
       prevConnectedRef.current !== isConnected ||
@@ -111,12 +92,12 @@ export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Check if Twitter is linked to a different wallet than the currently connected one
   const isTwitterLinkedToAnotherWallet = useMemo(
-    () => twitterLinkedAddress !== address,
+    () =>
+      Boolean(twitterLinkedAddress) && Boolean(address)
+        ? twitterLinkedAddress !== address
+        : false,
     [twitterLinkedAddress, address]
   );
-
-  // We no longer automatically logout when Twitter is linked to another wallet
-  // Users can decide when they want to connect Twitter
 
   return (
     <WalletSyncContext.Provider

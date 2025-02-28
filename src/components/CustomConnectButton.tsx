@@ -98,10 +98,6 @@ const TwitterConnectButton: FC<TwitterConnectButtonProps> = ({
   const isMobile = useMediaQuery("(max-width:600px)");
   const { isTwitterLinkedToAnotherWallet } = useWalletSync();
 
-  console.log(
-    `isTwitterLinkedToAnotherWallet ${isTwitterLinkedToAnotherWallet}`
-  );
-
   const commonButtonStyles = {
     backgroundColor: "rgba(29, 161, 242, 0.15)",
     backdropFilter: "blur(5px)",
@@ -186,21 +182,22 @@ const TwitterConnectButton: FC<TwitterConnectButtonProps> = ({
 export const CustomConnectButton = () => {
   const isMobile = useMediaQuery("(max-width:600px)");
   const isTablet = useMediaQuery("(max-width:900px)");
-  const { user, linkTwitter } = usePrivy();
+  const { user, linkTwitter, authenticated, login } = usePrivy();
   const [twitterModalOpen, setTwitterModalOpen] = useState(false);
   const { address } = useAccount();
   const { showSnackbar } = useSnackbar();
   const { isTwitterLinkedToAnotherWallet, twitterLinkedAddress } =
     useWalletSync();
 
-    // Show an information message when we detect Twitter linked to another address
-    // but don't force the user to take any action
-    useEffect(() => {
-      if (isTwitterLinkedToAnotherWallet && twitterLinkedAddress) {
-        showSnackbar("X account linked to another address. You can continue without X or connect a different X account.", "info");
-      }
+  useEffect(() => {
+    if (isTwitterLinkedToAnotherWallet && twitterLinkedAddress) {
+      showSnackbar(
+        "X account linked to another address. You can continue without X or connect a different X account.",
+        "info"
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isTwitterLinkedToAnotherWallet, twitterLinkedAddress]);
+  }, [isTwitterLinkedToAnotherWallet, twitterLinkedAddress]);
 
   // Check if user has Twitter linked
   const hasTwitterLinked = user?.linkedAccounts?.some(
@@ -217,7 +214,10 @@ export const CustomConnectButton = () => {
   // Handle Twitter connect with checks for existing links
   const handleTwitterConnect = async () => {
     if (!address) {
-      showSnackbar("Please connect your wallet first before connecting Twitter.", "warning");
+      showSnackbar(
+        "Please connect your wallet first before connecting Twitter.",
+        "warning"
+      );
       return;
     }
 
@@ -235,8 +235,23 @@ export const CustomConnectButton = () => {
     }
 
     try {
+      if (!authenticated) {
+        showSnackbar("Connecting wallet to X...", "info");
+        try {
+          login();
+
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        } catch (error) {
+          showSnackbar(
+            "Could not authenticate wallet. Please try again.",
+            "error"
+          );
+          return;
+        }
+      }
+
+      // Now proceed with Twitter connection
       if (!user || !user.id) {
-        console.log("Waiting for Privy authentication to complete...");
         // Wait for Privy authentication to complete
         let attempts = 0;
         const maxAttempts = 10;
@@ -244,9 +259,6 @@ export const CustomConnectButton = () => {
         while ((!user || !user.id) && attempts < maxAttempts) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
           attempts++;
-          console.log(
-            `Waiting for Privy auth... Attempt ${attempts}/${maxAttempts}`
-          );
         }
 
         if (!user || !user.id) {
@@ -260,7 +272,6 @@ export const CustomConnectButton = () => {
 
       linkTwitter();
     } catch (error) {
-      console.error("Error linking Twitter:", error);
       showSnackbar(
         "There was an error connecting your X account. Please try again.",
         "error"
