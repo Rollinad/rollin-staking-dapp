@@ -87,11 +87,11 @@ export const ProposalDetail: React.FC = () => {
   const { userData, userDataLoading } = useUserManagement();
 
   // Load proposal data with proper typing
-  const { data: proposalBasicData, isLoading: basicLoading } =
+  const { data: proposalBasicData, isLoading: basicLoading, refetch: refetchBasicData } =
     useProposalQueries().useProposalBasicDetails(proposalId);
-  const { data: proposalTokenData, isLoading: tokenLoading } =
+  const { data: proposalTokenData, isLoading: tokenLoading, refetch: refetchTokenData } =
     useProposalQueries().useProposalTokenDetails(proposalId);
-  const { data: proposalStatusData, isLoading: statusLoading } =
+  const { data: proposalStatusData, isLoading: statusLoading, refetch: refetchStatusData } =
     useProposalQueries().useProposalStatus(proposalId);
 
   // Load contribution data
@@ -265,6 +265,24 @@ export const ProposalDetail: React.FC = () => {
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
+  // Try to reload data if we have an ID but no data
+  React.useEffect(() => {
+    if (proposalId && !proposalBasicData && !basicLoading) {
+      refetchBasicData();
+    }
+    if (proposalId && !proposalTokenData && !tokenLoading) {
+      refetchTokenData();
+    }
+    if (proposalId && !proposalStatusData && !statusLoading) {
+      refetchStatusData();
+    }
+  }, [
+    proposalId, 
+    proposalBasicData, basicLoading, refetchBasicData,
+    proposalTokenData, tokenLoading, refetchTokenData,
+    proposalStatusData, statusLoading, refetchStatusData
+  ]);
+
   // Show loading state
   if (isLoading) {
     return (
@@ -277,9 +295,30 @@ export const ProposalDetail: React.FC = () => {
   // Handle errors if data is missing
   if (!proposalBasicData || !proposalTokenData || !proposalStatusData) {
     return (
-      <Alert severity="error">
-        Failed to load proposal data. Please try again later.
-      </Alert>
+      <Box>
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={() => navigate('/funding')}
+          sx={{ mb: 3, color: 'white' }}
+        >
+          Back to Proposals
+        </Button>
+        
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Failed to load proposal data. Please try again later.
+        </Alert>
+        
+        <Button 
+          variant="contained" 
+          onClick={() => {
+            refetchBasicData();
+            refetchTokenData();
+            refetchStatusData();
+          }}
+        >
+          Retry Loading Data
+        </Button>
+      </Box>
     );
   }
 
