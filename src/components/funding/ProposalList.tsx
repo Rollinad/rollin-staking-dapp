@@ -64,16 +64,9 @@ export const ProposalList = () => {
     }
   };
 
-  if (isFilteredLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box>
+      {/* Always show this Paper regardless of loading state */}
       <Paper 
         elevation={3}
         sx={{ 
@@ -156,7 +149,29 @@ export const ProposalList = () => {
         </Box>
       </Paper>
 
-      {currentProposals.length === 0 ? (
+      {/* Show loading state or content depending on isFilteredLoading */}
+      {isFilteredLoading ? (
+        <Paper 
+          elevation={3}
+          sx={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 2,
+            p: 6,
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <CircularProgress size={60} sx={{ mb: 2 }} />
+          <Typography variant="h6" sx={{ color: 'white' }}>
+            Loading proposals...
+          </Typography>
+        </Paper>
+      ) : currentProposals.length === 0 ? (
         <Paper 
           elevation={3}
           sx={{ 

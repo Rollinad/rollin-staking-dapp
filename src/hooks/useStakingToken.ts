@@ -1,6 +1,7 @@
 import { useAccount, useReadContract } from "wagmi";
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
+import { STAKING_CONTRACT_ADDRESS } from "../constants";
 import { StakingOption } from "../types/staking";
+import { STAKING_CONTRACT_ABI } from "../constants/staking/abi";
 
 export function useStakingToken(tokenAddress: `0x${string}`) {
   const { address: userAddress } = useAccount();

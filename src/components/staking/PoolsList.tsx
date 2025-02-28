@@ -15,9 +15,9 @@ import {
 import { useReadContract } from "wagmi";
 import { useERC20 } from "../../hooks/useERC20";
 import {
-  STAKING_CONTRACT_ABI,
   STAKING_CONTRACT_ADDRESS,
 } from "../../constants";
+import { STAKING_CONTRACT_ABI } from "../../constants/staking/abi";
 import { formatUnits } from "viem";
 import { useStakingToken } from "../../hooks/useStakingToken";
 import { StakingDialog } from "./StakingDialog";

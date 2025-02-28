@@ -5,10 +5,11 @@ import {
   useSimulateContract,
   useWriteContract,
 } from "wagmi";
-import { STAKING_CONTRACT_ABI, STAKING_CONTRACT_ADDRESS } from "../constants";
 import { ErrorMessage, StakeData } from "../types/staking";
 import { useState } from "react";
 import { formatEther } from "viem";
+import { STAKING_CONTRACT_ABI } from "../constants/staking/abi";
+import { STAKING_CONTRACT_ADDRESS } from "../constants";
 
 export function useStakingContract() {
   const { address: userAddress } = useAccount();

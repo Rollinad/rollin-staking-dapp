@@ -50,7 +50,7 @@ contract DAOToken is ERC20, Pausable, IDAOToken {
         address to,
         uint256 amount
     ) public virtual override(ERC20, IDAOToken) returns (bool) {
-        _approve(from, contributionManager, value);
+        _approve(from, contributionManager, amount);
         bool success = super.transferFrom(from, to, amount);
         if (success && ammAddress != address(0)) {
             if (to != ammAddress && to != contributionManager) {

@@ -6,11 +6,8 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { Address, parseEther } from "viem";
-import { DAOFundingABI, DAOViewABI } from "../contracts/funding/fundingAbi";
-
-// Replace with your actual contract addresses
-const DAO_FUNDING_ADDRESS = "0xYourDAOFundingContractAddress" as Address;
-const DAO_VIEW_ADDRESS = "0xYourDAOViewContractAddress" as Address;
+import { DAOFundingABI, DAOViewABI } from "../constants/funding/abi";
+import { DAO_FUNDING_CONTRACT_ADDRESS, DAO_VIEW_CONTRACT_ADDRESS } from "../constants";
 
 // Define types for the contract responses
 type UserDataResponse = [string, boolean, boolean, bigint[]];
@@ -56,7 +53,7 @@ export function useUserManagement() {
     isLoading: userDataLoading,
     refetch: refetchUserData,
   } = useReadContract({
-    address: DAO_VIEW_ADDRESS,
+    address: DAO_VIEW_CONTRACT_ADDRESS,
     abi: DAOViewABI,
     functionName: "getCreatorInfo",
     args: address ? [address] : undefined,
@@ -79,7 +76,7 @@ export function useUserManagement() {
     (xAccountId: string) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "registerUser",
         args: [xAccountId],
@@ -93,7 +90,7 @@ export function useUserManagement() {
     (xAccountId: string) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "updateToCreator",
         args: [xAccountId],
@@ -140,7 +137,7 @@ export function useProposalManagement() {
     ) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "createProposal",
         args: [
@@ -159,7 +156,7 @@ export function useProposalManagement() {
     (proposalId: bigint) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "approveProposal",
         args: [proposalId],
@@ -198,7 +195,7 @@ export function useContributionManagement() {
     (proposalId: bigint) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "requestToContribute",
         args: [proposalId],
@@ -212,7 +209,7 @@ export function useContributionManagement() {
     (proposalId: bigint, contributor: Address, contributionLimit: string) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "approveContributor",
         args: [proposalId, contributor, parseEther(contributionLimit)],
@@ -226,7 +223,7 @@ export function useContributionManagement() {
     (proposalId: bigint, amount: string) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "contribute",
         args: [proposalId],
@@ -241,7 +238,7 @@ export function useContributionManagement() {
     (proposalId: bigint) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "releaseFunds",
         args: [proposalId],
@@ -255,7 +252,7 @@ export function useContributionManagement() {
     (proposalId: bigint) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "withdrawContribution",
         args: [proposalId],
@@ -267,7 +264,7 @@ export function useContributionManagement() {
   // Get contribution info
   const useContributionInfo = (proposalId: bigint | undefined) => {
     const { data, isLoading, refetch } = useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getContributionInfo",
       args: proposalId && address ? [proposalId, address] : undefined,
@@ -323,7 +320,7 @@ export function useTokenTrading() {
     (proposalId: bigint, amount: string) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "swapETHForTokens",
         args: [proposalId],
@@ -338,7 +335,7 @@ export function useTokenTrading() {
     (proposalId: bigint, tokenAmount: string) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "swapTokensForETH",
         args: [proposalId, parseEther(tokenAmount)],
@@ -352,7 +349,7 @@ export function useTokenTrading() {
     (proposalId: bigint) => {
       if (!address) return;
       writeContract({
-        address: DAO_FUNDING_ADDRESS,
+        address: DAO_FUNDING_CONTRACT_ADDRESS,
         abi: DAOFundingABI,
         functionName: "setApprovalForTokenRefund",
         args: [proposalId],
@@ -380,7 +377,7 @@ export function useProposalQueries() {
   // Get total proposals
   const useTotalProposals = () => {
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getTotalProposals",
     });
@@ -389,7 +386,7 @@ export function useProposalQueries() {
   // Get proposals paginated
   const useProposalsPaginated = (offset: bigint = 0n, limit: bigint = 10n) => {
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalsPaginated",
       args: [offset, limit],
@@ -403,7 +400,7 @@ export function useProposalQueries() {
   const useProposalsByCreator = (creator?: Address) => {
     const creatorAddress = creator || address;
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalsByCreator",
       args: creatorAddress ? [creatorAddress] : undefined,
@@ -419,7 +416,7 @@ export function useProposalQueries() {
     onlyApproved: boolean = true
   ) => {
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getFilteredProposals",
       args: [onlyActive, onlyApproved],
@@ -429,7 +426,7 @@ export function useProposalQueries() {
   // Get proposal status
   const useProposalStatus = (proposalId: bigint | undefined) => {
     const { data, isLoading, refetch } = useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalStatus",
       args: proposalId ? [proposalId] : undefined,
@@ -453,7 +450,7 @@ export function useProposalQueries() {
   // Get proposal basic details
   const useProposalBasicDetails = (proposalId: bigint | undefined) => {
     const { data, isLoading, refetch } = useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalBasicDetails",
       args: proposalId ? [proposalId] : undefined,
@@ -480,7 +477,7 @@ export function useProposalQueries() {
   // Get proposal token details
   const useProposalTokenDetails = (proposalId: bigint | undefined) => {
     const { data, isLoading, refetch } = useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getProposalTokenDetails",
       args: proposalId ? [proposalId] : undefined,
@@ -522,7 +519,7 @@ export function useContributorQueries() {
   // Get contributor counts
   const useContributorsCounts = (proposalId: bigint | undefined) => {
     const { data, isLoading, refetch } = useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getContributorsCounts",
       args: proposalId ? [proposalId] : undefined,
@@ -548,7 +545,7 @@ export function useContributorQueries() {
     limit: bigint = 10n
   ) => {
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getRequestingContributorsPaginated",
       args: proposalId ? [proposalId, offset, limit] : undefined,
@@ -565,7 +562,7 @@ export function useContributorQueries() {
     limit: bigint = 10n
   ) => {
     const { data, isLoading, refetch } = useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getApprovedContributorsPaginated",
       args: proposalId ? [proposalId, offset, limit] : undefined,
@@ -596,7 +593,7 @@ export function useTokenBalances() {
   // Get token balance
   const useTokenBalance = (proposalId: bigint | undefined) => {
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getTokenBalance",
       args: proposalId ? [proposalId] : undefined,
@@ -613,7 +610,7 @@ export function useTokenBalances() {
   ) => {
     const targetAddress = account || address;
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getAddressTokenBalance",
       args:
@@ -627,7 +624,7 @@ export function useTokenBalances() {
   // Get current token price
   const useCurrentTokenPrice = (proposalId: bigint | undefined) => {
     return useReadContract({
-      address: DAO_VIEW_ADDRESS,
+      address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getCurrentTokenPrice",
       args: proposalId ? [proposalId] : undefined,

@@ -21,4 +21,5 @@ contract DAOErrors {
     error TokenNotDeployed();
     error TokenApprovalFailed();
     error TargetAmountNotReached();
+    error AddLiquidityFailed(string reason);
 }
