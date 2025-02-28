@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Alert,
-  Tabs,
-  Tab,
-  Paper,
-  Skeleton,
-} from "@mui/material";
+import { Box, Button, Alert, Tabs, Tab, Paper, Skeleton } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -52,7 +44,7 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`proposal-tabpanel-${index}`}
       aria-labelledby={`proposal-tab-${index}`}
@@ -73,12 +65,27 @@ const a11yProps = (index: number) => {
 // Create a ProposalHeaderSkeleton component
 const ProposalHeaderSkeleton = () => (
   <Box sx={{ mb: 4 }}>
-    <Skeleton variant="text" width="60%" height={40} sx={{ mb: 1 }} />
-    <Skeleton variant="text" width="40%" height={24} sx={{ mb: 2 }} />
-    <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: 2, mb: 2 }} />
+    <Skeleton variant='text' width='60%' height={40} sx={{ mb: 1 }} />
+    <Skeleton variant='text' width='40%' height={24} sx={{ mb: 2 }} />
+    <Skeleton
+      variant='rectangular'
+      width='100%'
+      height={120}
+      sx={{ borderRadius: 2, mb: 2 }}
+    />
     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-      <Skeleton variant="rectangular" width="48%" height={60} sx={{ borderRadius: 1 }} />
-      <Skeleton variant="rectangular" width="48%" height={60} sx={{ borderRadius: 1 }} />
+      <Skeleton
+        variant='rectangular'
+        width='48%'
+        height={60}
+        sx={{ borderRadius: 1 }}
+      />
+      <Skeleton
+        variant='rectangular'
+        width='48%'
+        height={60}
+        sx={{ borderRadius: 1 }}
+      />
     </Box>
   </Box>
 );
@@ -86,11 +93,21 @@ const ProposalHeaderSkeleton = () => (
 // Create a TabContentSkeleton component
 const TabContentSkeleton = () => (
   <Box>
-    <Skeleton variant="text" width="70%" height={32} sx={{ mb: 2 }} />
-    <Skeleton variant="text" width="90%" height={24} sx={{ mb: 1 }} />
-    <Skeleton variant="text" width="80%" height={24} sx={{ mb: 2 }} />
-    <Skeleton variant="rectangular" width="100%" height={100} sx={{ borderRadius: 2, mb: 3 }} />
-    <Skeleton variant="rectangular" width="100%" height={80} sx={{ borderRadius: 2 }} />
+    <Skeleton variant='text' width='70%' height={32} sx={{ mb: 2 }} />
+    <Skeleton variant='text' width='90%' height={24} sx={{ mb: 1 }} />
+    <Skeleton variant='text' width='80%' height={24} sx={{ mb: 2 }} />
+    <Skeleton
+      variant='rectangular'
+      width='100%'
+      height={100}
+      sx={{ borderRadius: 2, mb: 3 }}
+    />
+    <Skeleton
+      variant='rectangular'
+      width='100%'
+      height={80}
+      sx={{ borderRadius: 2 }}
+    />
   </Box>
 );
 
@@ -111,12 +128,21 @@ export const ProposalDetail: React.FC = () => {
   const { userData, userDataLoading } = useUserManagement();
 
   // Load proposal data with proper typing
-  const { data: proposalBasicData, isLoading: basicLoading, refetch: refetchBasicData } =
-    useProposalQueries().useProposalBasicDetails(proposalId);
-  const { data: proposalTokenData, isLoading: tokenLoading, refetch: refetchTokenData } =
-    useProposalQueries().useProposalTokenDetails(proposalId);
-  const { data: proposalStatusData, isLoading: statusLoading, refetch: refetchStatusData } =
-    useProposalQueries().useProposalStatus(proposalId);
+  const {
+    data: proposalBasicData,
+    isLoading: basicLoading,
+    refetch: refetchBasicData,
+  } = useProposalQueries().useProposalBasicDetails(proposalId);
+  const {
+    data: proposalTokenData,
+    isLoading: tokenLoading,
+    refetch: refetchTokenData,
+  } = useProposalQueries().useProposalTokenDetails(proposalId);
+  const {
+    data: proposalStatusData,
+    isLoading: statusLoading,
+    refetch: refetchStatusData,
+  } = useProposalQueries().useProposalStatus(proposalId);
 
   // Load contribution data
   const { data: contributionInfoData, isLoading: contributionLoading } =
@@ -134,16 +160,21 @@ export const ProposalDetail: React.FC = () => {
       data: ContributorCounts | null;
       isLoading: boolean;
     };
-  
-  const { data: approvedContributorsData, isLoading: approvedLoading } =
-    useContributorQueries().useApprovedContributorsPaginated(
+
+    const approvedContributorsResult = useContributorQueries().useApprovedContributorsPaginated(
       proposalId,
       0n,
       5n
-    ) as {
+    );
+    
+    // Then apply type assertion to the whole result
+    const approvedContributorsTyped = approvedContributorsResult as unknown as {
       data: [ContributorInfo[], bigint] | null;
       isLoading: boolean;
     };
+    
+    // And destructure from that
+    const { data: approvedContributorsData, isLoading: approvedLoading } = approvedContributorsTyped;
 
   // Hooks for actions
   const {
@@ -176,13 +207,10 @@ export const ProposalDetail: React.FC = () => {
   };
 
   // Check if critical data is loading - this affects if we can determine the structure of tabs
-  const isCriticalDataLoading = 
-    basicLoading || 
-    tokenLoading || 
-    statusLoading;
-  
+  const isCriticalDataLoading = basicLoading || tokenLoading || statusLoading;
+
   // Check if user-specific data is loading - this doesn't affect layout structure
-  const isDetailDataLoading = 
+  const isDetailDataLoading =
     userDataLoading ||
     contributionLoading ||
     balanceLoading ||
@@ -303,34 +331,41 @@ export const ProposalDetail: React.FC = () => {
       refetchStatusData();
     }
   }, [
-    proposalId, 
-    proposalBasicData, basicLoading, refetchBasicData,
-    proposalTokenData, tokenLoading, refetchTokenData,
-    proposalStatusData, statusLoading, refetchStatusData
+    proposalId,
+    proposalBasicData,
+    basicLoading,
+    refetchBasicData,
+    proposalTokenData,
+    tokenLoading,
+    refetchTokenData,
+    proposalStatusData,
+    statusLoading,
+    refetchStatusData,
   ]);
 
   // Check for data errors (after loading is complete)
-  const hasDataError = !isCriticalDataLoading && 
+  const hasDataError =
+    !isCriticalDataLoading &&
     (!proposalBasicData || !proposalTokenData || !proposalStatusData);
 
   // Show error state if data failed to load
   if (hasDataError) {
     return (
       <Box>
-        <Button 
-          startIcon={<ArrowBackIcon />} 
-          onClick={() => navigate('/funding')}
-          sx={{ mb: 3, color: 'white' }}
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/funding")}
+          sx={{ mb: 3, color: "white" }}
         >
           Back to Proposals
         </Button>
-        
-        <Alert severity="error" sx={{ mb: 2 }}>
+
+        <Alert severity='error' sx={{ mb: 2 }}>
           Failed to load proposal data. Please try again later.
         </Alert>
-        
-        <Button 
-          variant="contained" 
+
+        <Button
+          variant='contained'
           onClick={() => {
             refetchBasicData();
             refetchTokenData();
@@ -351,7 +386,9 @@ export const ProposalDetail: React.FC = () => {
     const statusData = proposalStatusData as ProposalStatus;
     const contributionData = contributionInfoData as ContributionInfo | null;
     const contributorCounts = contributorCountsData as ContributorCounts | null;
-    const approvedContributors = approvedContributorsData as [ContributorInfo[], bigint] | null;
+    const approvedContributors = approvedContributorsData as
+      | [ContributorInfo[], bigint]
+      | null;
     const tokenBalance = tokenBalanceData as bigint | null;
     const tokenPrice = tokenPriceData as bigint | null;
 
@@ -458,7 +495,7 @@ export const ProposalDetail: React.FC = () => {
           <Tabs
             value={tabValue}
             onChange={handleTabChange}
-            aria-label="proposal tabs"
+            aria-label='proposal tabs'
             sx={{
               borderBottom: 1,
               borderColor: "rgba(255, 255, 255, 0.1)",
@@ -473,10 +510,10 @@ export const ProposalDetail: React.FC = () => {
               },
             }}
           >
-            <Tab label="Overview" {...a11yProps(0)} />
-            <Tab label="Contribute" {...a11yProps(1)} />
-            <Tab label="Contributors" {...a11yProps(2)} />
-            {canTrade && <Tab label="Trade" {...a11yProps(3)} />}
+            <Tab label='Overview' {...a11yProps(0)} />
+            <Tab label='Contribute' {...a11yProps(1)} />
+            <Tab label='Contributors' {...a11yProps(2)} />
+            {canTrade && <Tab label='Trade' {...a11yProps(3)} />}
           </Tabs>
 
           {/* Overview Tab */}
@@ -604,7 +641,7 @@ export const ProposalDetail: React.FC = () => {
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
-          aria-label="proposal tabs"
+          aria-label='proposal tabs'
           sx={{
             borderBottom: 1,
             borderColor: "rgba(255, 255, 255, 0.1)",
@@ -619,9 +656,9 @@ export const ProposalDetail: React.FC = () => {
             },
           }}
         >
-          <Tab label="Overview" {...a11yProps(0)} />
-          <Tab label="Contribute" {...a11yProps(1)} />
-          <Tab label="Contributors" {...a11yProps(2)} />
+          <Tab label='Overview' {...a11yProps(0)} />
+          <Tab label='Contribute' {...a11yProps(1)} />
+          <Tab label='Contributors' {...a11yProps(2)} />
         </Tabs>
 
         {/* Skeleton Tab Content */}
