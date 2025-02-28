@@ -18,6 +18,8 @@ import {
 import { formatEther } from "viem";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PendingIcon from "@mui/icons-material/Pending";
+import TwitterIcon from "@mui/icons-material/Twitter";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   ProposalBasic,
   ProposalToken,
@@ -62,6 +64,10 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
   contributionError,
   canContribute: canContributeProp,
 }) => {
+  // Check if Twitter is linked
+  const { user } = usePrivy();
+  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter');
+  
   // Derived state
   const isLoading = contributionPending || contributionConfirming;
   const hasContributed =
@@ -73,15 +79,18 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         !proposalBasic.isClosed &&
         contributionInfo &&
         contributionInfo.isApproved &&
-        !isFundingEnded;
+        !isFundingEnded &&
+        hasTwitterLinked; // Add Twitter check
   const isRequestPending =
     userData?.isRegistered &&
     !contributionInfo?.isApproved &&
     contributionInfo?.hasRequested;
   const needsToRequest =
     userData?.isRegistered &&
+    hasTwitterLinked && // Add Twitter check
     !contributionInfo?.isApproved &&
     !contributionInfo?.hasRequested;
+  const needsTwitter = !hasTwitterLinked;
 
   // Constants
   const PRICE_PRECISION = 1e18;
@@ -124,6 +133,25 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
       {!userData?.isRegistered && (
         <Alert severity='info' sx={{ mb: 3 }}>
           You need to register to contribute to this proposal.
+        </Alert>
+      )}
+      
+      {needsTwitter && (
+        <Alert 
+          severity='info' 
+          sx={{ mb: 3 }}
+          icon={<TwitterIcon sx={{ color: '#1DA1F2' }} />}
+          action={
+            <Button 
+              color="info" 
+              size="small"
+              onClick={() => document.dispatchEvent(new Event('openAccountModal'))}
+            >
+              Connect
+            </Button>
+          }
+        >
+          You need to connect your Twitter account to contribute to this proposal.
         </Alert>
       )}
 
@@ -411,10 +439,40 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
             color: "white",
           }}
         >
-          {needsToRequest && renderRequestToContributeSection()}
-          {isRequestPending && renderPendingRequestSection()}
-          {canContribute && renderContributeSection()}
-          {canWithdraw && renderWithdrawSection()}
+          {needsTwitter && (
+            <Stack spacing={2} alignItems='center' sx={{ py: 3 }}>
+              <TwitterIcon sx={{ fontSize: 48, color: '#1DA1F2' }} />
+              <Typography variant='h6' sx={{ textAlign: "center" }}>
+                Twitter Connection Required
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{
+                  textAlign: "center",
+                  color: "rgba(255, 255, 255, 0.7)",
+                  maxWidth: "80%",
+                }}
+              >
+                To participate in DAO funding, please connect your Twitter account for verification purposes.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<TwitterIcon />}
+                onClick={() => document.dispatchEvent(new Event('openAccountModal'))}
+                sx={{ 
+                  bgcolor: '#1DA1F2', 
+                  '&:hover': { bgcolor: '#0c8bd9' },
+                  mt: 2
+                }}
+              >
+                Connect Twitter
+              </Button>
+            </Stack>
+          )}
+          {!needsTwitter && needsToRequest && renderRequestToContributeSection()}
+          {!needsTwitter && isRequestPending && renderPendingRequestSection()}
+          {!needsTwitter && canContribute && renderContributeSection()}
+          {!needsTwitter && canWithdraw && renderWithdrawSection()}
         </Paper>
       </Grid>
 

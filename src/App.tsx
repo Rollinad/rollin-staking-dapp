@@ -10,9 +10,15 @@ import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
 import { AnimatedBackground } from "./styles/styled";
-import { TradeAnalytics } from "./components/analytic/TradeAnalytic";
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import PrivyWagmiConnector from "./components/wallet/PriviWagmiConnector";
+import { ProposalDetail } from "./components/funding/proposal-detail/ProposalDetail";
+import { MyContributions } from "./components/funding/MyContribution";
+import { MyProposals } from "./components/funding/MyProposals";
+import { ProposalList } from "./components/funding/ProposalList";
+import { DepositToken } from "./components/staking/DepositToken";
+import { CreateProposal } from "./components/funding/CreateProposal";
+import UserRegistration from "./components/funding/UserRegistration";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -21,31 +27,32 @@ interface MainContentProps {
 }
 
 const MainContent = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'sidebarCollapsed'
+  shouldForwardProp: (prop) => prop !== "sidebarCollapsed",
 })<MainContentProps>(({ sidebarCollapsed }) => ({
-  marginLeft: sidebarCollapsed ? '64px' : '240px',
-  width: `calc(100% - ${sidebarCollapsed ? '64px' : '240px'})`,
-  transition: 'margin 225ms cubic-bezier(0.4, 0, 0.6, 1), width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
-  '@media (max-width: 600px)': {
+  marginLeft: sidebarCollapsed ? "64px" : "240px",
+  width: `calc(100% - ${sidebarCollapsed ? "64px" : "240px"})`,
+  transition:
+    "margin 225ms cubic-bezier(0.4, 0, 0.6, 1), width 225ms cubic-bezier(0.4, 0, 0.6, 1)",
+  "@media (max-width: 600px)": {
     marginLeft: 0,
-    width: '100%',
+    width: "100%",
   },
 }));
 
 export const App = () => {
   // Keep using wagmi's useAccount during transition
-  const { isConnected: wagmiConnected } = useAccount();
-  
+  const { isConnected: wagmiConnected, address } = useAccount();
+
   // Also use Privy's authentication state
   const { authenticated } = usePrivy();
   const { wallets } = useWallets();
-  
+
   // Combine both states during the transition period
   const isConnected = wagmiConnected || (authenticated && wallets.length > 0);
-  
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const isMobile = useMediaQuery('(max-width:600px)');
+  const isMobile = useMediaQuery("(max-width:600px)");
 
   useEffect(() => {
     if (isMobile) {
@@ -62,7 +69,7 @@ export const App = () => {
         setIsRegistered(false);
       }
     };
-    
+
     checkUserRegistration();
   }, [isConnected, address]);
 
@@ -71,89 +78,115 @@ export const App = () => {
   };
 
   return (
-    <AnimatedBackground>
-      {/* Add the connector component to sync Privy and Wagmi */}
-      <PrivyWagmiConnector />
-      
-      <Sidebar onCollapse={handleSidebarCollapse} />
-      <MainContent sidebarCollapsed={sidebarCollapsed}>
-        <Container maxWidth='lg' sx={{ py: 4 }}>
-          <Box
-            sx={{
-              mb: 4,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Box sx={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 2,
-              ml: { xs: 5, sm: 6 } // Add margin to move logo and title right
-            }}>
-              <img
-                src={rollinStakingIcon}
-                alt='Rollin Logo'
-                style={{
-                  height: "40px",
-                  width: "auto",
-                }}
-              />
-              <Typography
-                variant='h4'
-                sx={{
-                  color: "#ffffff",
-                  fontWeight: "bold",
-                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                  fontSize: {
-                    xs: '1.5rem',    // 24px for mobile
-                    sm: '2rem',      // 32px for tablet
-                    md: '2.125rem',  // 34px (default h4 size)
-                  },
-                }}
-              >
-                Rollin Staking
-              </Typography>
-            </Box>
-            <CustomConnectButton />
-          </Box>
-          {isConnected ? (
-            <>
-              <Box sx={{ mt: 3 }}>
-                <Routes>
-                  <Route path="/stake">
-                    <Route index element={<PoolsList />} />
-                    <Route path="create-pool" element={<CreatePool />} />
-                    <Route path="create-option" element={<CreateStakingOption />} />
-                  </Route>
-                  <Route path="/" element={<Navigate to="/swap" replace />} />
-                  <Route path="*" element={<Navigate to="/stake" replace />} />
-                  <Route path="/swap" element={<SwapCard />} />
-                  <Route path="/analytics" element={<TradeAnalytics />} />
-                </Routes>
-              </Box>
-            </>
-          ) : (
-            <Typography 
-              variant='h6' 
-              textAlign='center'
-              sx={{ 
-                color: '#ffffff',
-                mt: 4,
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(5px)',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
+      <AnimatedBackground>
+        <PrivyWagmiConnector />
+
+        <Sidebar onCollapse={handleSidebarCollapse} />
+        <MainContent sidebarCollapsed={sidebarCollapsed}>
+          <Container maxWidth='lg' sx={{ py: 4 }}>
+            <Box
+              sx={{
+                mb: 4,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
-              Please connect your wallet to continue
-            </Typography>
-          )}
-        </Container>
-      </MainContent>
-    </AnimatedBackground>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  ml: { xs: 5, sm: 6 }, // Add margin to move logo and title right
+                }}
+              >
+                <img
+                  src={rollinStakingIcon}
+                  alt='Rollin Logo'
+                  style={{
+                    height: "40px",
+                    width: "auto",
+                  }}
+                />
+                <Typography
+                  variant='h4'
+                  sx={{
+                    color: "#ffffff",
+                    fontWeight: "bold",
+                    textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                    fontSize: {
+                      xs: "1.5rem", // 24px for mobile
+                      sm: "2rem", // 32px for tablet
+                      md: "2.125rem", // 34px (default h4 size)
+                    },
+                  }}
+                >
+                  Rollin Staking
+                </Typography>
+              </Box>
+              <CustomConnectButton />
+            </Box>
+            {isConnected ? (
+              <>
+                <Box sx={{ mt: 3 }}>
+                  <Routes>
+                    <Route path='/stake'>
+                      <Route index element={<PoolsList />} />
+                      <Route path='create-pool' element={<CreatePool />} />
+                      <Route
+                        path='create-option'
+                        element={<CreateStakingOption />}
+                      />
+                      <Route path='deposit' element={<DepositToken />} />
+                    </Route>
+
+                    {/* Swap Route */}
+                    <Route path='/swap' element={<SwapCard />} />
+
+                    {/* New DAO Funding Routes */}
+                    <Route path='/funding'>
+                      <Route index element={<ProposalList />} />
+                      <Route path='my-proposals' element={<MyProposals />} />
+                      <Route path="create" element={
+                        isRegistered ? <CreateProposal /> : <UserRegistration />
+                      } />
+                      <Route path='detail/:id' element={<ProposalDetail />} />
+                      <Route
+                        path='contributions'
+                        element={<MyContributions />}
+                      />
+                      <Route path="register" element={<UserRegistration />} />
+                    </Route>
+
+                    {/* Default routes */}
+                    <Route path='/' element={<Navigate to='/swap' replace />} />
+                    <Route
+                      path='*'
+                      element={<Navigate to='/stake' replace />}
+                    />
+                  </Routes>
+                </Box>
+              </>
+            ) : (
+              <Typography
+                variant='h6'
+                textAlign='center'
+                sx={{
+                  color: "#ffffff",
+                  mt: 4,
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(5px)",
+                  padding: "20px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                }}
+              >
+                Please connect your wallet to continue
+              </Typography>
+            )}
+          </Container>
+        </MainContent>
+      </AnimatedBackground>
   );
 };
 

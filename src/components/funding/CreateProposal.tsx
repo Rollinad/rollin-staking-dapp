@@ -17,6 +17,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import { usePrivy } from '@privy-io/react-auth';
 import { useProposalManagement, useUserManagement } from '../../hooks/useFundingContract';
 
 export const CreateProposal = () => {
@@ -32,12 +34,23 @@ export const CreateProposal = () => {
   const { userData, userDataLoading } = useUserManagement();
   const { createProposal, isPending, isConfirming, isConfirmed, writeError } = useProposalManagement();
 
-  // Check if user is a creator
+  // Check if user is a creator and has Twitter linked
+  const { user } = usePrivy();
+  const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter');
+
   useEffect(() => {
-    if (!userDataLoading && userData && !userData.isCreator) {
-      navigate('/funding/register');
+    if (!userDataLoading && userData) {
+      // If user is not a creator, redirect to registration
+      if (!userData.isCreator) {
+        navigate('/funding/register');
+      }
+      // If user has no Twitter account linked, redirect to account page
+      else if (!hasTwitterLinked) {
+        // Open account modal to prompt Twitter connection
+        document.dispatchEvent(new Event('openAccountModal'));
+      }
     }
-  }, [userData, userDataLoading, navigate]);
+  }, [userData, userDataLoading, hasTwitterLinked, navigate]);
 
   // Redirect on successful creation
   useEffect(() => {
@@ -101,6 +114,48 @@ export const CreateProposal = () => {
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
       </Box>
+    );
+  }
+  
+  // Check if Twitter account is linked
+  if (!hasTwitterLinked && userData?.isCreator) {
+    return (
+      <Paper 
+        elevation={3}
+        sx={{
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: 2,
+          p: 3,
+          maxWidth: 800,
+          mx: 'auto',
+          color: 'white'
+        }}
+      >
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <TwitterIcon sx={{ fontSize: 64, color: '#1DA1F2', mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Twitter Account Required
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3, color: 'rgba(255, 255, 255, 0.8)' }}>
+            To create funding proposals, you need to link your Twitter account for verification.
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<TwitterIcon />}
+            onClick={() => document.dispatchEvent(new Event('openAccountModal'))}
+            sx={{ 
+              bgcolor: '#1DA1F2', 
+              '&:hover': { bgcolor: '#0c8bd9' },
+              py: 1.5, 
+              px: 3
+            }}
+          >
+            Connect Twitter Account
+          </Button>
+        </Box>
+      </Paper>
     );
   }
 
