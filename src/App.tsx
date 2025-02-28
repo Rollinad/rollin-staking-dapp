@@ -11,6 +11,7 @@ import { CustomConnectButton } from "./components/CustomConnectButton";
 import { useState, useEffect } from "react";
 import { SwapCard } from "./components/swapping/SwapCard";
 import { AnimatedBackground, customTheme } from "./styles/styled";
+import { DepositToken } from "./components/staking/DepositToken";
 import { CreateProposal } from "./components/funding/CreateProposal";
 import { MyProposals } from "./components/funding/MyProposals";
 import { ProposalDetail } from "./components/funding/proposal-detail/ProposalDetail";
@@ -121,6 +122,7 @@ export const App = () => {
                       <Route index element={<PoolsList />} />
                       <Route path="create-pool" element={<CreatePool />} />
                       <Route path="create-option" element={<CreateStakingOption />} />
+                      <Route path="deposit" element={<DepositToken />} />
                     </Route>
                     
                     {/* Swap Route */}

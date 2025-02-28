@@ -115,6 +115,7 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
     event FreezeDurationUpdated(uint256 newDuration);
     event FreezeFeeUpdated(uint256 newFee);
     event PoolFeeUpdated(uint256 newFee);
+    event AllocationPercentUpdated(uint256 newAllocationPercent);
 
     /**
      * @dev Constructor to initialize the contract
@@ -179,6 +180,17 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
         require(poolFee > 0, "Invalid fee");
         _poolFee = poolFee;
         emit PoolFeeUpdated(poolFee);
+    }
+
+    function setAllocationPercent(
+        uint256 allocationPercent
+    ) external onlyOwner {
+        require(allocationPercent > 0, "Invalid allocation percent");
+        require(allocationPercent <= BASIS_POINTS, "Allocation exceeds 100%");
+
+        _allocationPercent = allocationPercent;
+
+        emit AllocationPercentUpdated(allocationPercent);
     }
 
     /**
@@ -457,6 +469,10 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
         return _registeredContract;
     }
 
+    function getAllocationPercent() public view returns (uint256) {
+        return _allocationPercent;
+    }
+
     function getStakingOptions(
         IERC20 tokenContract
     ) public view returns (StakingOption[] memory) {
@@ -507,6 +523,25 @@ contract RollinStaking is ReentrancyGuard, Pausable, Ownable {
         }
 
         return result;
+    }
+
+    function getOwnedStakingPools(
+        address owner
+    ) external view returns (IERC20[] memory) {
+        return _stakingPools[owner];
+    }
+
+    function getTotalStakedAmount(
+        IERC20 tokenContract
+    ) external view returns (uint256) {
+        bytes32[] memory optionIds = _optionsByTokenContract[tokenContract];
+        uint256 totalStaked = 0;
+
+        for (uint256 i = 0; i < optionIds.length; i++) {
+            totalStaked += _optionTvl[optionIds[i]];
+        }
+
+        return totalStaked;
     }
 
     function _isPoolOwner(IERC20 tokenContract) private view returns (bool) {

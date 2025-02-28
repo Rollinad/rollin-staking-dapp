@@ -252,6 +252,21 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
                   }}
                 />
               </StyledSubListItemButton>
+              <StyledSubListItemButton
+                selected={isCurrentRoute("/stake/deposit")}
+                onClick={() => handleNavigation("/stake/deposit")}
+              >
+                <StyledListItemText
+                  primary='Deposit Rewards'
+                  secondary='Add tokens for staking rewards'
+                  sx={{
+                    "& .MuiListItemText-secondary": {
+                      color: "rgba(255, 255, 255, 0.7)",
+                      fontSize: "0.7rem",
+                    },
+                  }}
+                />
+              </StyledSubListItemButton>
             </List>
           </Collapse>
           

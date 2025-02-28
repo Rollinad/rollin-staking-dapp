@@ -5,45 +5,81 @@ import { StakingOption } from "../types/staking";
 export function useStakingToken(tokenAddress: `0x${string}`) {
   const { address: userAddress } = useAccount();
 
-  // Get pool available balance
-  const { data: availableBalance } = useReadContract({
-    abi: STAKING_CONTRACT_ABI,
-    address: STAKING_CONTRACT_ADDRESS,
-    functionName: "getAvailablePoolBalance",
-    args: [tokenAddress],
-  });
+  const { data: availableBalance, refetch: refetchAvailableBalance } =
+    useReadContract({
+      abi: STAKING_CONTRACT_ABI,
+      address: STAKING_CONTRACT_ADDRESS,
+      functionName: "getAvailablePoolBalance",
+      args: [tokenAddress],
+    });
 
-  // Get total staked amount through staking options
-  const { data: stakingOptions } = useReadContract({
-    abi: STAKING_CONTRACT_ABI,
-    address: STAKING_CONTRACT_ADDRESS,
-    functionName: "getStakingOptions",
-    args: [tokenAddress],
-  }) as { data: StakingOption[] | undefined; refetch: () => void };
+  const { data: totalStakedAmount, refetch: refetchTotalStakedAmount } =
+    useReadContract({
+      abi: STAKING_CONTRACT_ABI,
+      address: STAKING_CONTRACT_ADDRESS,
+      functionName: "getTotalStakedAmount",
+      args: [tokenAddress],
+    });
 
-  // Calculate total TVL (available balance + staked amount)
-  const tvl = availableBalance || 0n;
+  const { data: stakingOptions, refetch: refetchStakingOptions } =
+    useReadContract({
+      abi: STAKING_CONTRACT_ABI,
+      address: STAKING_CONTRACT_ADDRESS,
+      functionName: "getStakingOptions",
+      args: [tokenAddress],
+    }) as {
+      data: StakingOption[] | undefined;
+      refetch: () => Promise<{ data: StakingOption[] | undefined }>;
+    };
 
-  const { data: freezingBalance } = useReadContract({
-    address: STAKING_CONTRACT_ADDRESS,
-    abi: STAKING_CONTRACT_ABI,
-    functionName: "getFreezingBalance",
-    args: [tokenAddress],
-    account: userAddress,
-  });
+  const { data: freezingBalance, refetch: refetchFreezingBalance } =
+    useReadContract({
+      address: STAKING_CONTRACT_ADDRESS,
+      abi: STAKING_CONTRACT_ABI,
+      functionName: "getFreezingBalance",
+      args: [tokenAddress],
+      account: userAddress,
+    });
 
-  const { data: availableFrozen } = useReadContract({
-    address: STAKING_CONTRACT_ADDRESS,
-    abi: STAKING_CONTRACT_ABI,
-    functionName: "getAvailableFrozen",
-    args: [tokenAddress],
-    account: userAddress,
-  });
+  const { data: availableFrozen, refetch: refetchAvailableFrozen } =
+    useReadContract({
+      address: STAKING_CONTRACT_ADDRESS,
+      abi: STAKING_CONTRACT_ABI,
+      functionName: "getAvailableFrozen",
+      args: [tokenAddress],
+      account: userAddress,
+    });
+
+  const tvl = totalStakedAmount || undefined;
+  const reward = availableBalance || undefined;
+
+  // Function to refetch all data
+  const refetchAll = async () => {
+    await Promise.all([
+      refetchAvailableBalance(),
+      refetchTotalStakedAmount(),
+      refetchStakingOptions(),
+      refetchFreezingBalance(),
+      refetchAvailableFrozen(),
+    ]);
+  };
 
   return {
-    tvl: tvl.toString(),
+    // Data
+    tvl: tvl?.toString(),
+    reward: reward?.toString(),
+    totalStakedAmount,
+    availableBalance,
     stakingOptions,
     freezingBalance,
     availableFrozen,
+
+    // Refetch functions
+    refetchAvailableBalance,
+    refetchTotalStakedAmount,
+    refetchStakingOptions,
+    refetchFreezingBalance,
+    refetchAvailableFrozen,
+    refetchAll,
   };
 }
