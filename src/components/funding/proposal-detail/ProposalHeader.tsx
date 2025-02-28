@@ -12,7 +12,6 @@ import {
   Avatar,
 } from "@mui/material";
 import { formatEther } from "viem";
-import { stringToColor } from "../../../utils/stringToColor";
 import {
   ProposalBasic,
   ProposalToken,
@@ -20,6 +19,8 @@ import {
   ContributionInfo,
   UserData,
 } from "../../../types/funding";
+import { usePrivy } from "@privy-io/react-auth";
+import TwitterIcon from "@mui/icons-material/Twitter";
 
 interface ProposalHeaderProps {
   proposalBasic: ProposalBasic;
@@ -79,6 +80,14 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
   tokenBalance,
   setTabValue,
 }) => {
+  const { user } = usePrivy();
+
+  const twitterAccount = user?.linkedAccounts?.find(
+    (account) => account.type === "twitter_oauth"
+  );
+  const twitterUsername = twitterAccount?.username || "";
+  const twitterAvatarUrl = twitterAccount?.profilePictureUrl || "";
+
   return (
     <Paper
       elevation={3}
@@ -143,30 +152,37 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                mr: 1,
-                bgcolor: stringToColor(proposalBasic.creator),
-              }}
-            >
-              {proposalBasic.creator.substring(2, 4).toUpperCase()}
-            </Avatar>
-            <Box>
+            <Stack direction='column' spacing={0.4}>
               <Typography
                 variant='body2'
                 sx={{ color: "rgba(255, 255, 255, 0.7)" }}
               >
                 Created by
               </Typography>
-              <Typography variant='body1' sx={{ color: "white" }}>
-                {proposalToken.creatorXAccountId ||
-                  proposalBasic.creator.substring(0, 8) +
-                    "..." +
-                    proposalBasic.creator.substring(36)}
-              </Typography>
-            </Box>
+              <Stack direction='row' spacing={1}>
+                {twitterAvatarUrl ? (
+                  <Avatar
+                    src={twitterAvatarUrl}
+                    alt={twitterUsername}
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      border: "2px solid #1DA1F2",
+                    }}
+                  />
+                ) : (
+                  <Avatar sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}>
+                    <TwitterIcon sx={{ fontSize: 30 }} />
+                  </Avatar>
+                )}
+                <Typography variant='body1' sx={{ color: "white" }}>
+                  {proposalToken.creatorXAccountId ?  `@${proposalToken.creatorXAccountId}` :
+                    proposalBasic.creator.substring(0, 8) +
+                      "..." +
+                      proposalBasic.creator.substring(36)}
+                </Typography>
+              </Stack>
+            </Stack>
           </Box>
 
           <Typography

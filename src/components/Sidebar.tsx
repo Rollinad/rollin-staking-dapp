@@ -104,8 +104,8 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ onCollapse }: SidebarProps) => {
-  const [stakeOpen, setStakeOpen] = useState(true);
-  const [fundingOpen, setFundingOpen] = useState(true);
+  const [stakeOpen, setStakeOpen] = useState(false);
+  const [fundingOpen, setFundingOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
