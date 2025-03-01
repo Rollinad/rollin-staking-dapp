@@ -50,7 +50,9 @@ contract ProposalManager {
         uint256 targetAmount,
         string calldata tokenName,
         string calldata tokenSymbol,
-        uint256 tokenSupply
+        uint256 tokenSupply,
+        uint256 initialMarketCap,
+        bool useUniswap
     ) external onlyDAOFunding returns (uint256) {
         if (!DAOLib.validateProposalParameters(targetAmount, tokenSupply, lpPercentage))
             revert InvalidParameters();
@@ -64,6 +66,12 @@ contract ProposalManager {
         );
 
         if (tokenPrice < contributionPrice) revert InvalidParameters();
+        
+        // Validate market cap if using Uniswap
+        if (useUniswap && initialMarketCap == 0) {
+            // Default to targetAmount * 2 as initial market cap if not specified
+            initialMarketCap = targetAmount * 2;
+        }
 
         uint256 proposalId = daoStorage.getCurrentProposalId();
         (string memory creatorXAccountId, , , ) = daoStorage.getUserData(creator);
@@ -83,13 +91,16 @@ contract ProposalManager {
         IDAOStorage.ProposalToken memory token = IDAOStorage.ProposalToken({
             tokenAddress: address(0),
             ammAddress: address(0),
+            uniswapPairAddress: address(0),
             tokenName: tokenName,
             tokenSymbol: tokenSymbol,
             tokenSupply: tokenSupply,
             allocationSupply: allocationSupply,
             tokenPrice: tokenPrice,
             contributionPrice: contributionPrice,
-            creatorXAccountId: creatorXAccountId
+            creatorXAccountId: creatorXAccountId,
+            initialMarketCap: initialMarketCap,
+            useUniswap: useUniswap
         });
 
         daoStorage.setProposalBasic(proposalId, basic);

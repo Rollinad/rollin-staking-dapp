@@ -6,6 +6,8 @@ import "../libraries/DAOLib.sol";
 import "../tokens/DAOToken.sol";
 import "../tokens/SimpleAMM.sol";
 import "../core/DAOErrors.sol";
+import "../integrations/UniswapIntegration.sol";
+import "../interfaces/IDAOFundingParent.sol";
 
 contract ContributionManager is DAOErrors {
     using DAOLib for IDAOStorage.Proposal;
@@ -121,8 +123,24 @@ contract ContributionManager is DAOErrors {
         if (block.timestamp < basic.createdAt + fundingPeriod) revert FundingPeriodEnded();
         if (basic.currentAmount < basic.targetAmount) revert TargetAmountNotReached();
         if (token.tokenAddress == address(0)) revert TokenNotDeployed();
-        if (token.ammAddress == address(0)) revert AMMNotDeployed();
-
+        
+        // Handle SimpleAMM or Uniswap deployments differently
+        if (token.useUniswap) {
+            // Use Uniswap for liquidity
+            _releaseWithUniswap(proposalId, basic, token);
+        } else {
+            // Use SimpleAMM (original flow)
+            if (token.ammAddress == address(0)) revert AMMNotDeployed();
+            _releaseWithSimpleAMM(proposalId, basic, token);
+        }
+    }
+    
+    function _releaseWithSimpleAMM(
+        uint256 proposalId,
+        IDAOStorage.ProposalBasic memory basic,
+        IDAOStorage.ProposalToken memory token
+    ) internal {
+        // Close the proposal
         basic.isClosed = true;
         daoStorage.setProposalBasic(proposalId, basic);
 
@@ -140,8 +158,82 @@ contract ContributionManager is DAOErrors {
             revert AddLiquidityFailed(reason);
         }
 
-        (bool sent, ) = payable(msg.sender).call{value: creatorAmount}("");
+        (bool sent, ) = payable(basic.creator).call{value: creatorAmount}("");
         if (!sent) revert TransferFailed();
+    }
+    
+    function _releaseWithUniswap(
+        uint256 proposalId,
+        IDAOStorage.ProposalBasic memory basic,
+        IDAOStorage.ProposalToken memory token
+    ) internal {
+        // Check if the Uniswap pair has been created
+        if (token.uniswapPairAddress == address(0)) {
+            // Get Uniswap integration from DAOFunding
+            address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
+            
+            // Create the Uniswap pair
+            try UniswapIntegration(payable(uniswapAddr)).createPair(token.tokenAddress) returns (address pairAddress) {
+                token.uniswapPairAddress = pairAddress;
+                daoStorage.setProposalToken(proposalId, token);
+            } catch {
+                revert UniswapPairNotCreated();
+            }
+        }
+        
+        // Close the proposal
+        basic.isClosed = true;
+        daoStorage.setProposalBasic(proposalId, basic);
+        
+        // Calculate token and ETH amounts based on desired market cap
+        (uint256 ethForLiquidity, uint256 tokensForLiquidity) = _calculateUniswapLiquidity(token, basic.currentAmount);
+        uint256 creatorAmount = basic.currentAmount - ethForLiquidity;
+        
+        // Approve tokens for Uniswap
+        bool success = IDAOToken(token.tokenAddress).approve(address(this), tokensForLiquidity);
+        if (!success) revert TokenApprovalFailed();
+        
+        // Get the tokens from the token contract itself (likely should be from token owner address)
+        success = IDAOToken(token.tokenAddress).transfer(address(this), tokensForLiquidity);
+        if (!success) revert TransferFailed();
+        
+        // Approve tokens for Uniswap integration
+        address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
+        success = IDAOToken(token.tokenAddress).approve(uniswapAddr, tokensForLiquidity);
+        if (!success) revert TokenApprovalFailed();
+        
+        // Add liquidity to Uniswap
+        try UniswapIntegration(payable(uniswapAddr)).addLiquidity{value: ethForLiquidity}(
+            token.tokenAddress,
+            tokensForLiquidity,
+            ethForLiquidity * 95 / 100, // 5% slippage tolerance
+            basic.creator // LP tokens go to creator
+        ) {
+            emit LiquidityCommitted(proposalId, ethForLiquidity);
+            emit FundsReleased(proposalId, basic.creator, creatorAmount);
+        } catch Error(string memory reason) {
+            revert UniswapDeploymentFailed(reason);
+        } catch {
+            revert UniswapDeploymentFailed("Unknown error");
+        }
+        
+        // Transfer remaining ETH to creator
+        (bool sent, ) = payable(basic.creator).call{value: creatorAmount}("");
+        if (!sent) revert TransferFailed();
+    }
+    
+    function _calculateUniswapLiquidity(
+        IDAOStorage.ProposalToken memory token,
+        uint256 raisedAmount
+    ) internal view returns (uint256 ethAmount, uint256 tokenAmount) {
+        address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
+        
+        // Use the calculated values from UniswapIntegration
+        return UniswapIntegration(payable(uniswapAddr)).calculateInitialLiquidity(
+            raisedAmount,
+            token.initialMarketCap,
+            token.tokenSupply
+        );
     }
 
     function withdrawContribution(

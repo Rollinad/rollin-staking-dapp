@@ -2,23 +2,41 @@
 pragma solidity ^0.8.0;
 
 import "./core/DAOBase.sol";
+import "./integrations/UniswapIntegration.sol";
 import "./managers/ContributionManager.sol";
 import "./managers/ProposalManager.sol";
 import "./managers/TradingManager.sol";
 import "./managers/UserManager.sol";
+import "./interfaces/IDAOFundingParent.sol";
 
-contract DAOFunding is DAOBase {
+interface IUniswapIntegration {
+    function swapETHForTokens(address token, uint256 amountOutMin, address to) external payable returns (uint256[] memory amounts);
+    function swapTokensForETH(address token, uint256 amountIn, uint256 amountOutMin, address to) external returns (uint256[] memory amounts);
+}
+
+contract DAOFunding is DAOBase, IDAOFundingParent {
     UserManager public immutable userManager;
     ProposalManager public immutable proposalManager;
     ContributionManager public immutable contributionManager;
     TradingManager public immutable tradingManager;
+    /**
+     * @dev UniswapIntegration contract for handling Uniswap operations.
+     */
+    address public immutable uniswapIntegration;
+    
+    address public uniswapRouter;
+
+    event UniswapRouterUpdated(address indexed newRouter);
 
     constructor(
         address _daoStorage,
         uint256 _fundingPeriod,
-        uint256 _lpPercentage
+        uint256 _lpPercentage,
+        address _uniswapRouter
     ) DAOBase(_daoStorage, _fundingPeriod, _lpPercentage, msg.sender) {
         daoStorage = IDAOStorage(_daoStorage);
+        uniswapRouter = _uniswapRouter;
+        
         userManager = new UserManager(_daoStorage, address(this));
         contributionManager = new ContributionManager(
             _daoStorage,
@@ -26,8 +44,15 @@ contract DAOFunding is DAOBase {
             _lpPercentage,
             _fundingPeriod
         );
-        proposalManager = new ProposalManager(_daoStorage, address(this), address(contributionManager), _lpPercentage);
+        proposalManager = new ProposalManager(
+            _daoStorage, 
+            address(this), 
+            address(contributionManager), 
+            _lpPercentage
+        );
         tradingManager = new TradingManager(_daoStorage, address(this));
+        // Create and store the address of the UniswapIntegration contract
+        uniswapIntegration = address(new UniswapIntegration(_uniswapRouter));
     }
 
     function setAuthorizeContracts() external onlyOwner {
@@ -49,14 +74,18 @@ contract DAOFunding is DAOBase {
         uint256 targetAmount,
         string calldata tokenName,
         string calldata tokenSymbol,
-        uint256 tokenSupply
+        uint256 tokenSupply,
+        uint256 initialMarketCap,
+        bool useUniswap
     ) external onlyCreator whenNotPaused {
         proposalManager.createProposal(
             msg.sender,
             targetAmount,
             tokenName,
             tokenSymbol,
-            tokenSupply
+            tokenSupply,
+            initialMarketCap,
+            useUniswap
         );
     }
 
@@ -110,9 +139,50 @@ contract DAOFunding is DAOBase {
     ) external whenNotPaused proposalExists(proposalId) {
         tradingManager.swapTokensForETH(proposalId, tokenAmount, msg.sender);
     }
+    
+    function swapETHForTokensViaUniswap(
+        uint256 proposalId,
+        uint256 amountOutMin
+    ) external payable whenNotPaused proposalExists(proposalId) {
+        IDAOStorage.ProposalToken memory token = daoStorage.getProposalToken(proposalId);
+        
+        if (!token.useUniswap || token.uniswapPairAddress == address(0)) {
+            revert NotValidForUniswap();
+        }
+        
+        IUniswapIntegration(uniswapIntegration).swapETHForTokens{value: msg.value}(
+            token.tokenAddress,
+            amountOutMin,
+            msg.sender
+        );
+    }
+    
+    function swapTokensForETHViaUniswap(
+        uint256 proposalId,
+        uint256 tokenAmount,
+        uint256 amountOutMin
+    ) external whenNotPaused proposalExists(proposalId) {
+        IDAOStorage.ProposalToken memory token = daoStorage.getProposalToken(proposalId);
+        
+        if (!token.useUniswap || token.uniswapPairAddress == address(0)) {
+            revert NotValidForUniswap();
+        }
+        
+        IUniswapIntegration(uniswapIntegration).swapTokensForETH(
+            token.tokenAddress,
+            tokenAmount,
+            amountOutMin,
+            msg.sender
+        );
+    }
 
     function setApprovalForTokenRefund(uint256 proposalId) external {
         tradingManager.setApprovalForTokenRefund(proposalId, msg.sender);
+    }
+    
+    function setUniswapRouter(address _uniswapRouter) external onlyOwner {
+        uniswapRouter = _uniswapRouter;
+        emit UniswapRouterUpdated(_uniswapRouter);
     }
 
     function setFundingPeriod(uint256 _fundingPeriod) external onlyOwner {
