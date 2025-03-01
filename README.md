@@ -389,4 +389,4 @@ contract/funding/
 ```
 
 ## License
-[Your License Here]
+All other files are covered by the MIT license, see [`LICENSE`](./LICENSE).
