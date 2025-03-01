@@ -100,7 +100,8 @@ contract ProposalManager {
             contributionPrice: contributionPrice,
             creatorXAccountId: creatorXAccountId,
             initialMarketCap: initialMarketCap,
-            useUniswap: useUniswap
+            useUniswap: useUniswap,
+            uniswapPositionId: 0
         });
 
         daoStorage.setProposalBasic(proposalId, basic);

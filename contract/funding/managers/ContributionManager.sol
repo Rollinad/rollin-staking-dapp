@@ -6,7 +6,7 @@ import "../libraries/DAOLib.sol";
 import "../tokens/DAOToken.sol";
 import "../tokens/SimpleAMM.sol";
 import "../core/DAOErrors.sol";
-import "../integrations/UniswapIntegration.sol";
+import "../integrations/UniswapV3Integration.sol";
 import "../interfaces/IDAOFundingParent.sol";
 
 contract ContributionManager is DAOErrors {
@@ -25,8 +25,6 @@ contract ContributionManager is DAOErrors {
     event FundsReleased(uint256 indexed proposalId, address indexed creator, uint256 amount);
     event FundsRefunded(uint256 indexed proposalId, address indexed contributor, uint256 amount);
     event ContributorLimitAdjusted(uint256 indexed proposalId, address indexed contributor, uint256 newLimit);
-
-    error NotAuthorized();
 
     modifier onlyDAOFunding() {
         if (msg.sender != daoFunding) revert NotAuthorized();
@@ -173,8 +171,10 @@ contract ContributionManager is DAOErrors {
             address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
             
             // Create the Uniswap pair
-            try UniswapIntegration(payable(uniswapAddr)).createPair(token.tokenAddress) returns (address pairAddress) {
-                token.uniswapPairAddress = pairAddress;
+            // For V3, the fee tier is defined as 0.3% (3000) by default
+            uint24 feeTier = 3000;
+            try UniswapV3Integration(payable(uniswapAddr)).createPool(token.tokenAddress, feeTier) returns (address poolAddress) {
+                token.uniswapPairAddress = poolAddress;
                 daoStorage.setProposalToken(proposalId, token);
             } catch {
                 revert UniswapPairNotCreated();
@@ -202,13 +202,16 @@ contract ContributionManager is DAOErrors {
         success = IDAOToken(token.tokenAddress).approve(uniswapAddr, tokensForLiquidity);
         if (!success) revert TokenApprovalFailed();
         
-        // Add liquidity to Uniswap
-        try UniswapIntegration(payable(uniswapAddr)).addLiquidity{value: ethForLiquidity}(
+        // Add liquidity to Uniswap V3
+        try UniswapV3Integration(payable(uniswapAddr)).addLiquidity{value: ethForLiquidity}(
             token.tokenAddress,
             tokensForLiquidity,
             ethForLiquidity * 95 / 100, // 5% slippage tolerance
-            basic.creator // LP tokens go to creator
-        ) {
+            basic.creator // Position NFT goes to creator
+        ) returns (uint256 positionId) {
+            // Store the position ID in the token data
+            token.uniswapPositionId = positionId;
+            daoStorage.setProposalToken(proposalId, token);
             emit LiquidityCommitted(proposalId, ethForLiquidity);
             emit FundsReleased(proposalId, basic.creator, creatorAmount);
         } catch Error(string memory reason) {
@@ -229,7 +232,7 @@ contract ContributionManager is DAOErrors {
         address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
         
         // Use the calculated values from UniswapIntegration
-        return UniswapIntegration(payable(uniswapAddr)).calculateInitialLiquidity(
+        return UniswapV3Integration(payable(uniswapAddr)).calculateInitialLiquidity(
             raisedAmount,
             token.initialMarketCap,
             token.tokenSupply

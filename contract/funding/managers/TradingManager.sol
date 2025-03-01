@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "../interfaces/IDAOStorage.sol";
 import "../interfaces/ISimpleAMM.sol";
 import "../interfaces/IDAOToken.sol";
-import "../integrations/UniswapIntegration.sol";
+import "../integrations/UniswapV3Integration.sol";
 import "../interfaces/IDAOFundingParent.sol";
 
 contract TradingManager {
@@ -44,7 +44,7 @@ contract TradingManager {
             // Calculate minimum output with 2% slippage
             uint256 amountOutMin = 0; // Simple version - in production, calculate this properly
             
-            UniswapIntegration(payable(uniswapAddr)).swapETHForTokens{value: msg.value}(
+            UniswapV3Integration(payable(uniswapAddr)).swapETHForTokens{value: msg.value}(
                 token.tokenAddress,
                 amountOutMin,
                 recipient
@@ -77,7 +77,7 @@ contract TradingManager {
             bool success = IDAOToken(token.tokenAddress).approve(uniswapAddr, tokenAmount);
             if (!success) revert TransferFailed();
             
-            UniswapIntegration(payable(uniswapAddr)).swapTokensForETH(
+            UniswapV3Integration(payable(uniswapAddr)).swapTokensForETH(
                 token.tokenAddress,
                 tokenAmount,
                 amountOutMin,
@@ -111,7 +111,7 @@ contract TradingManager {
         if (token.useUniswap && token.uniswapPairAddress != address(0)) {
             // Get price from Uniswap
             address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
-            return UniswapIntegration(payable(uniswapAddr)).getCurrentPrice(token.tokenAddress);
+            return UniswapV3Integration(payable(uniswapAddr)).getCurrentPrice(token.tokenAddress);
         } else if (token.ammAddress != address(0)) {
             // Get price from SimpleAMM
             return ISimpleAMM(token.ammAddress).getCurrentPrice();

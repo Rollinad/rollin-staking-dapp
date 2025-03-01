@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./core/DAOBase.sol";
-import "./integrations/UniswapIntegration.sol";
+import "./integrations/UniswapV3Integration.sol";
 import "./managers/ContributionManager.sol";
 import "./managers/ProposalManager.sol";
 import "./managers/TradingManager.sol";
@@ -32,7 +32,8 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
         address _daoStorage,
         uint256 _fundingPeriod,
         uint256 _lpPercentage,
-        address _uniswapRouter
+        address _uniswapRouter,
+        address _positionManager
     ) DAOBase(_daoStorage, _fundingPeriod, _lpPercentage, msg.sender) {
         daoStorage = IDAOStorage(_daoStorage);
         uniswapRouter = _uniswapRouter;
@@ -51,8 +52,8 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
             _lpPercentage
         );
         tradingManager = new TradingManager(_daoStorage, address(this));
-        // Create and store the address of the UniswapIntegration contract
-        uniswapIntegration = address(new UniswapIntegration(_uniswapRouter));
+        // Create and store the address of the UniswapV3Integration contract
+        uniswapIntegration = address(new UniswapV3Integration(_uniswapRouter, _positionManager));
     }
 
     function setAuthorizeContracts() external onlyOwner {
@@ -150,7 +151,7 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
             revert NotValidForUniswap();
         }
         
-        IUniswapIntegration(uniswapIntegration).swapETHForTokens{value: msg.value}(
+        UniswapV3Integration(payable(uniswapIntegration)).swapETHForTokens{value: msg.value}(
             token.tokenAddress,
             amountOutMin,
             msg.sender
@@ -168,7 +169,7 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
             revert NotValidForUniswap();
         }
         
-        IUniswapIntegration(uniswapIntegration).swapTokensForETH(
+        UniswapV3Integration(payable(uniswapIntegration)).swapTokensForETH(
             token.tokenAddress,
             tokenAmount,
             amountOutMin,
@@ -178,6 +179,25 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
 
     function setApprovalForTokenRefund(uint256 proposalId) external {
         tradingManager.setApprovalForTokenRefund(proposalId, msg.sender);
+    }
+    
+    function collectUniswapFees(uint256 proposalId) external whenNotPaused proposalExists(proposalId) {
+        IDAOStorage.ProposalToken memory token = daoStorage.getProposalToken(proposalId);
+        
+        if (!token.useUniswap || token.uniswapPairAddress == address(0) || token.uniswapPositionId == 0) {
+            revert NotValidForUniswap();
+        }
+        
+        // Only the proposal creator can collect fees
+        if (msg.sender != daoStorage.getProposalBasic(proposalId).creator) {
+            revert NotAuthorized();
+        }
+        
+        // Collect trading fees to the caller (creator)
+        UniswapV3Integration(payable(uniswapIntegration)).collectFees(
+            token.tokenAddress,
+            msg.sender
+        );
     }
     
     function setUniswapRouter(address _uniswapRouter) external onlyOwner {

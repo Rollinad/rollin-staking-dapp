@@ -25,4 +25,5 @@ contract DAOErrors {
     error NotValidForUniswap();
     error UniswapPairNotCreated();
     error UniswapDeploymentFailed(string reason);
+    error NotAuthorized();
 }
