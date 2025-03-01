@@ -72,7 +72,7 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 ### Platform Administrators
 - Monitor overall platform metrics
 - Manage platform parameters and fees
-- Pause contracts in emergency situations
+- Pause contracts in emergencies
 - Upgrade contracts when needed
 - Adjust supported token lists
 
@@ -94,15 +94,15 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 ### Token Swapping Business Flow
 ```
 ┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ User        │     │ Select tokens   │     │ System fetches │
-│ visits swap ├────►│ & enter amount  ├────►│ real-time quote│
+│ User        │     │ Select tokens  │     │ System fetches  │
+│ visits swap ├────►│ & enter amount ├────►│ real-time quote │
 │ interface   │     └────────────────┘     └────────┬────────┘
 └─────────────┘                                     │
                                                     │
-┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
-│ Monitor swap│     │ Execute        │     │ User reviews    │
-│ analytics   │◄────┤ transaction    │◄────┤ quote & fees    │
-└─────────────┘     └────────────────┘     └─────────────────┘
+                    ┌────────────────┐     ┌────────▼────────┐
+                    │ Execute        │     │ User reviews    │
+                    │ transaction    │◄────┤ quote & fees    │
+                    └────────────────┘     └─────────────────┘
 ```
 
 ### Complete Staking Business Flow
@@ -158,10 +158,10 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 ┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
 │ System      │     │ Proposal opens │     │ Proposal        │
 │ validates   ├────►│ for funding    ├────►│ accumulates     │
-│ proposal    │     │                │     │ contributions    │
+│ proposal    │     │                │     │ contributions   │
 └──────┬──────┘     └────────────────┘     └────────┬────────┘
-       │                                             │
-       │      If funding goal reached                │
+       │                                            │
+       │      If funding goal reached               │
        │      ┌────────────────┐     ┌──────────────▼───────┐
        └─────►│ Project tokens │     │ Trading begins on    │
               │ are created    ├────►│ SimpleAMM            │
@@ -277,8 +277,6 @@ npm run build
 - Viem for type-safe Ethereum interactions
 - Multi-chain support:
   - Monad Testnet (primary)
-  - Ethereum Mainnet
-  - Sepolia Testnet
 
 ## Smart Contracts
 
@@ -341,17 +339,17 @@ contract/funding/
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                  React Frontend (Vite)                  │
-├─────────────┬─────────────────────────┬────────────────┤
-│  Staking    │      DAO Funding        │  Token Swap    │
-│  Module     │      Module             │  Module        │
-└──────┬──────┴──────────┬──────────────┴────────┬───────┘
+├─────────────┬─────────────────────────┬───────────────-─┤
+│  Staking    │      DAO Funding        │  Token Swap     │
+│  Module     │      Module             │  Module         │
+└──────┬──────┴──────────┬──────────────┴────────┬───────-┘
        │                 │                       │        
 ┌──────▼─────────────────▼──────────────────────▼───────┐
-│               Web3 Integration Layer                   │
+│               Web3 Integration Layer                  │
 │    (Wagmi, Viem, RainbowKit, Privy, Ethers.js)        │
 └──────┬─────────────────┬──────────────────────┬───────┘
        │                 │                      │        
-┌──────▼──────┐  ┌──────▼──────┐  ┌────────────▼───────┐
+┌──────▼──────┐  ┌───-───▼─────┐  ┌────────────-▼──────┐
 │  Staking    │  │  Funding    │  │  0x Protocol API   │
 │  Contracts  │  │  Contracts  │  │  (Swap Service)    │
 └─────────────┘  └─────────────┘  └────────────────────┘
@@ -382,11 +380,11 @@ contract/funding/
 │  User        │    │  Frontend   │    │  API Layer    │    │ Blockchain │
 │  Interface   │◄──►│  Components │◄──►│  (Next.js)    │◄──►│ (Contracts)│
 └──────────────┘    └─────────────┘    └───────────────┘    └────────────┘
-        │                                      ▲                   ▲
-        │                                      │                   │
-        │                                      │                   │
-        │               ┌─────────────────────┐│                   │
-        └──────────────►│ 0x Protocol Service ├───────────────────┘
+        │                                    ▲                   ▲
+        │                                    │                   │
+        │                                    │                   │
+        │               ┌─────────────────────┐                  │
+        └──────────────►│ 0x Protocol Service ├────────────────-─┘
                         └─────────────────────┘
 ```
 
