@@ -1,4 +1,3 @@
-// src/components/funding/proposal-detail/SwapDialog.tsx
 import React from "react";
 import {
   Dialog,

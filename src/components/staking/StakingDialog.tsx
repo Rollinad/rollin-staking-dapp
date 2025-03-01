@@ -179,7 +179,6 @@ const parseErrorMessage = (error: ErrorMessage): string => {
     return "Stake is still locked. Please use frozen unstake or wait until lock period ends";
   }
 
-  // If we can't identify a specific error, try to clean up the generic message
   if (typeof error === "string") return error;
   if (error.message) return error.message.replace(/\[.*?\]|"|\\/g, "").trim();
 

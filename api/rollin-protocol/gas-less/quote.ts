@@ -71,7 +71,7 @@ export default async function handler(
       chainId: data.chainId.toString(),
     });
 
-    // First try to get a price quote to check if the swap is possible
+    // Try to get a price quote to check if the swap is possible
     const priceResponse = await fetch(
       `https://api.0x.org/gasless/price?${params}`,
       {
@@ -89,7 +89,7 @@ export default async function handler(
       });
     }
 
-    // Now get the full quote with signature requirements
+    // Get the full quote with signature requirements
     const quoteResponse = await fetch(
       `https://api.0x.org/gasless/quote?${params}`,
       {

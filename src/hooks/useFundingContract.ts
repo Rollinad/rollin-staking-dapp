@@ -621,7 +621,6 @@ export function useTokenBalances() {
   };
 }
 
-// Add missing ContributorInfo type
 export type ContributorInfo = {
   contributorAddress: Address;
   currentContribution: bigint;
