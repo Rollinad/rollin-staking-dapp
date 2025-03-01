@@ -80,14 +80,14 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         contributionInfo &&
         contributionInfo.isApproved &&
         !isFundingEnded &&
-        hasTwitterLinked; // Add Twitter check
+        hasTwitterLinked;
   const isRequestPending =
     userData?.isRegistered &&
     !contributionInfo?.isApproved &&
     contributionInfo?.hasRequested;
   const needsToRequest =
     userData?.isRegistered &&
-    hasTwitterLinked && // Add Twitter check
+    hasTwitterLinked &&
     !contributionInfo?.isApproved &&
     !contributionInfo?.hasRequested;
   const needsTwitter = !hasTwitterLinked;

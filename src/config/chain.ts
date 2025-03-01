@@ -1,4 +1,3 @@
-// src/config/chains.ts
 import { http } from 'viem'
 import { mainnet, sepolia } from 'wagmi/chains'
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'

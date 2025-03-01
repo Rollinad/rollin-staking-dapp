@@ -33,7 +33,7 @@ import { ProposalView } from '../../types/funding';
 // Define an interface for contribution data
 interface ContributionData {
   proposalId: number;
-  proposal: any; // You can replace this with your actual ProposalView interface
+  proposal: any;
   contribution: {
     limit: bigint;
     currentContribution: bigint;
@@ -70,14 +70,14 @@ export const MyContributions = () => {
       return;
     }
     
-    // If we haven't started checking yet, start with the first proposal
+    // If haven't started checking yet, start with the first proposal
     if (currentProposalIndex === null && (allProposals as ProposalView[]).length > 0) {
       setLoading(true);
       setCurrentProposalIndex(0);
       return;
     }
     
-    // If we're done checking all proposals, finish
+    // If done checking all proposals, finish
     if (currentProposalIndex !== null && currentProposalIndex >= (allProposals as ProposalView[]).length) {
       setLoading(false);
       setCurrentProposalIndex(null);

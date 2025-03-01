@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Address } from 'viem';
 
-// TokenSelectDialog.tsx
+
 import {
   Dialog,
   DialogTitle,

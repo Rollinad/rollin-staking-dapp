@@ -68,7 +68,6 @@ export const DepositToken = () => {
   const formattedTokens = ((registeredContracts as `0x${string}`[]) || []).map(
     (contract) => ({
       address: contract,
-      // Add any additional token info you might have here
     })
   );
 

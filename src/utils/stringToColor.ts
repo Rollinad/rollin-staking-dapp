@@ -1,5 +1,3 @@
-// src/utils/stringToColor.ts
-
 // Utility to generate a consistent color from a string (like an address)
 export function stringToColor(string: string): string {
   let hash = 0;
