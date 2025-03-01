@@ -33,6 +33,7 @@ export default async function handler(
       sellAmount: data.sellAmount,
       takerAddress: data.takerAddress,
       chainId: data.chainId,
+      tradeSurplusRecipient: import.meta.env.VITE_0X_SURPLUS_RECIPIENT,
     });
 
     console.log("start here")

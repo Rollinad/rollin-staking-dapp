@@ -62,7 +62,8 @@ export default async function handler(
       buyToken: data.buyToken,
       sellAmount: data.sellAmount.toString(),
       taker: data.takerAddress,
-      chainId: data.chainId.toString()
+      chainId: data.chainId.toString(),
+      tradeSurplusRecipient: import.meta.env.VITE_0X_SURPLUS_RECIPIENT,
     });
 
     const response = await fetch(

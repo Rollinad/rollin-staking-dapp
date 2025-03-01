@@ -1,5 +1,5 @@
 // TokenSelectDialog.tsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -23,7 +23,7 @@ import { erc20Abi, formatUnits, isAddress } from "viem";
 import type { Address } from "viem";
 import { useReadContract } from "wagmi";
 import { useTokensData } from "../../hooks/useTokensData";
-import { ErrorMessage } from "../../types/staking";
+import { ErrorMessage, TokenData } from "../../types/staking";
 import { Token } from "../../hooks/useTokens";
 
 interface TokenSelectDialogProps {
@@ -71,23 +71,42 @@ export const TokenSelectDialog = ({
     [availableTokens]
   );
 
-  // Fetch all tokens data at once using updated hook
-  const tokensData = useTokensData(tokenAddresses);
+  // Fetch all tokens data at once using updated hook with destructured refreshBalances
+  const { refreshBalances, ...tokensData } = useTokensData(tokenAddresses);
+  
+  // Refresh balances when dialog opens
+  useEffect(() => {
+    if (open) {
+      refreshBalances();
+    }
+  }, [open, refreshBalances]);
 
   // Filter tokens and combine with fetched data
   const filteredTokens = useMemo(
-    () =>
-      availableTokens
+    () => {
+      // Cast tokensData to appropriate type for TS
+      const tokenBalances = tokensData as unknown as Record<string, TokenData>;
+      
+      return availableTokens
         .filter(
           (token) =>
             token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
             token.address.toLowerCase().includes(searchQuery.toLowerCase())
         )
-        .map((token) => ({
-          ...token,
-          balance: tokensData[token.address]?.balance
-        })),
+        .map((token) => {
+          // Try both original and lowercase address
+          const balance = 
+            tokenBalances[token.address]?.balance || 
+            tokenBalances[token.address.toLowerCase()]?.balance || 
+            undefined;
+            
+          return {
+            ...token,
+            balance
+          };
+        });
+    },
     [searchQuery, availableTokens, tokensData]
   );
 
@@ -206,12 +225,16 @@ export const TokenSelectDialog = ({
                 </Typography>
               }
             />
-            {tokensData[token.address]?.balance && (
+            {token.balance ? (
               <Typography sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
                 {formatUnits(
-                  tokensData[token.address].balance!,
+                  token.balance,
                   token.decimal
                 )}
+              </Typography>
+            ) : (
+              <Typography sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
+                0
               </Typography>
             )}
           </ListItemButton>
