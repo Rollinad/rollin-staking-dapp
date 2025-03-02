@@ -54,10 +54,10 @@ contract UniswapV3Integration is ReentrancyGuard, IERC721Receiver {
     error InvalidPoolAddress();
     error PositionNotFound();
 
-    constructor(address _swapRouter, address _positionManager) {
+    constructor(address _swapRouter, address _positionManager, address _factory, address _weth) {
         swapRouter = _swapRouter;
-        factory = IUniswapV3Factory(ISwapRouter(_swapRouter).WETH9()).owner();
-        weth = ISwapRouter(_swapRouter).WETH9();
+        factory = _factory;
+        weth = _weth;
         positionManager = _positionManager;
     }
     

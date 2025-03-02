@@ -33,7 +33,9 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
         uint256 _fundingPeriod,
         uint256 _lpPercentage,
         address _uniswapRouter,
-        address _positionManager
+        address _positionManager,
+        address _uniswapFactory,
+        address _weth
     ) DAOBase(_daoStorage, _fundingPeriod, _lpPercentage, msg.sender) {
         daoStorage = IDAOStorage(_daoStorage);
         uniswapRouter = _uniswapRouter;
@@ -53,7 +55,7 @@ contract DAOFunding is DAOBase, IDAOFundingParent {
         );
         tradingManager = new TradingManager(_daoStorage, address(this));
         // Create and store the address of the UniswapV3Integration contract
-        uniswapIntegration = address(new UniswapV3Integration(_uniswapRouter, _positionManager));
+        uniswapIntegration = address(new UniswapV3Integration(_uniswapRouter, _positionManager, _uniswapFactory, _weth));
     }
 
     function setAuthorizeContracts() external onlyOwner {
