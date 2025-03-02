@@ -12,6 +12,7 @@ import { App } from "./App";
 import { config } from "./config/chain";
 import theme from "./theme";
 import { WalletSyncProvider } from "./contexts/WalletSyncContext";
+import { PrivyWagmiConnector } from "./components/wallet/PriviWagmiConnector";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./styles/fonts.css";
 
@@ -33,6 +34,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               appearance: {
                 theme: "dark",
                 accentColor: "#9c27b0",
+                walletChainType: "ethereum-only",
               },
               embeddedWallets: {
                 createOnLogin: "off",
@@ -41,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             }}
           >
             <WalletSyncProvider>
+              <PrivyWagmiConnector />
               <BrowserRouter>
                 <ThemeProvider theme={theme}>
                   <CssBaseline />
