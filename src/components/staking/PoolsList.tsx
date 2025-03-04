@@ -32,7 +32,7 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
   const { name, symbol, decimals } = useERC20(address);
   const { tvl, reward } = useStakingToken(address);
 
-  if (!tvl || !name || !symbol || !decimals || !reward) {
+  if (!name || !symbol || !decimals || !reward) {
     return (
       <TableRow>
         <TableCell colSpan={6} sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
@@ -42,7 +42,7 @@ const PoolItem = ({ index, address }: PoolItemProps) => {
     );
   }
 
-  const formattedTVL = formatUnits(BigInt(tvl), Number(decimals) || 18);
+  const formattedTVL = formatUnits(BigInt(tvl ?? 0), Number(decimals) || 18);
   const formattedReward = formatUnits(BigInt(reward), Number(decimals) || 18);
 
   return (
