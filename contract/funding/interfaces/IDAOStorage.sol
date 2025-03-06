@@ -34,7 +34,8 @@ interface IDAOStorage {
 
     struct ProposalToken {
         address tokenAddress;
-        address ammAddress;
+        address ammAddress;         // SimpleAMM address
+        address uniswapPairAddress; // Uniswap pair or pool address
         string tokenName;
         string tokenSymbol;
         uint256 tokenSupply;
@@ -42,6 +43,9 @@ interface IDAOStorage {
         uint256 tokenPrice;
         uint256 contributionPrice;
         string creatorXAccountId;
+        uint256 initialMarketCap;   // Initial market cap for Uniswap bonding curve
+        bool useUniswap;            // Whether to deploy to Uniswap when funding target is reached
+        uint256 uniswapPositionId;  // Position NFT ID for Uniswap V3 liquidity
     }
 
     struct ContributorInfo {

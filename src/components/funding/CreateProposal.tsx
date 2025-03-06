@@ -31,6 +31,8 @@ export const CreateProposal = () => {
     tokenSymbol: "",
     targetAmount: "",
     tokenSupply: "",
+    initialMarketCap: "0",
+    useUniswap: true
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -108,18 +110,34 @@ export const CreateProposal = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Update form data with the changed value
+    const updatedData = { ...formData, [name]: value };
+    
+    // If target amount changes and Uniswap is enabled, update initial market cap
+    if (name === 'targetAmount' && formData.useUniswap && value) {
+      const targetAmountNum = Number(value);
+      if (!isNaN(targetAmountNum) && targetAmountNum > 0) {
+        updatedData.initialMarketCap = (targetAmountNum * 2).toString();
+      }
+    }
+    
+    setFormData(updatedData);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    console.log(`formData: ${JSON.stringify(formData)}`)
+
     createProposal(
       formData.targetAmount,
       formData.tokenName,
       formData.tokenSymbol,
-      formData.tokenSupply
+      formData.tokenSupply,
+      formData.initialMarketCap,
+      formData.useUniswap
     );
   };
 

@@ -22,6 +22,7 @@ import { useState, useEffect, FC } from "react";
 import { useAccount } from "wagmi";
 import { useWalletSync } from "../contexts/WalletSyncContext";
 import { useSnackbar } from "../contexts/SnackbarContext";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-paper": {
@@ -186,18 +187,32 @@ export const CustomConnectButton = () => {
   const [twitterModalOpen, setTwitterModalOpen] = useState(false);
   const { address } = useAccount();
   const { showSnackbar } = useSnackbar();
-  const { isTwitterLinkedToAnotherWallet, twitterLinkedAddress } =
-    useWalletSync();
+  const { 
+    isTwitterLinkedToAnotherWallet, 
+    twitterLinkedAddress,
+    walletMismatchError,
+    unlinkTwitter
+  } = useWalletSync();
 
+  // Show wallet mismatch error when detected
   useEffect(() => {
-    if (isTwitterLinkedToAnotherWallet && twitterLinkedAddress) {
-      showSnackbar(
-        "X account linked to another address. You can continue without X or connect a different X account.",
-        "info"
-      );
+    if (walletMismatchError) {
+      showSnackbar(walletMismatchError, "error");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTwitterLinkedToAnotherWallet, twitterLinkedAddress]);
+  }, [walletMismatchError]);
+  
+  // Handle unlinking Twitter when there's a wallet mismatch
+  const handleUnlinkTwitter = async () => {
+    try {
+      await unlinkTwitter("twitter_oauth");
+      showSnackbar("Twitter account unlinked successfully", "success");
+      setTwitterModalOpen(false);
+    } catch (error) {
+      console.error("Error unlinking Twitter:", error);
+      showSnackbar("Failed to unlink Twitter account", "error");
+    }
+  };
 
   // Check if user has Twitter linked
   const hasTwitterLinked = user?.linkedAccounts?.some(
@@ -374,42 +389,84 @@ export const CustomConnectButton = () => {
                   </CardContent>
                 </StyledCard>
 
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Chip
-                    icon={<TwitterIcon style={{ color: "#1DA1F2" }} />}
-                    label='Twitter Connected'
+                {walletMismatchError ? (
+                  <StyledCard sx={{ bgcolor: "rgba(211, 47, 47, 0.2)" }}>
+                    <CardContent>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <ErrorOutlineIcon sx={{ color: "#f44336", fontSize: 40 }} />
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ color: "#f44336", fontWeight: 600 }}>
+                            Wallet Mismatch Detected
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                            {walletMismatchError}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                      <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between" }}>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          onClick={handleUnlinkTwitter}
+                          sx={{ mr: 1 }}
+                        >
+                          Unlink Twitter
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={() => setTwitterModalOpen(false)}
+                          sx={{
+                            color: "white",
+                            borderColor: "rgba(255, 255, 255, 0.3)",
+                            "&:hover": {
+                              borderColor: "white",
+                              bgcolor: "rgba(255, 255, 255, 0.05)",
+                            },
+                          }}
+                        >
+                          Close
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </StyledCard>
+                ) : (
+                  <Box
                     sx={{
-                      bgcolor: "rgba(29, 161, 242, 0.2)",
-                      color: "#1DA1F2",
-                      borderRadius: "8px",
-                      py: 1,
-                      px: 1,
-                      "& .MuiChip-label": {
-                        px: 1,
-                      },
-                    }}
-                  />
-                  <Button
-                    variant='outlined'
-                    onClick={() => setTwitterModalOpen(false)}
-                    sx={{
-                      color: "white",
-                      borderColor: "rgba(255, 255, 255, 0.3)",
-                      "&:hover": {
-                        borderColor: "white",
-                        bgcolor: "rgba(255, 255, 255, 0.05)",
-                      },
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
                     }}
                   >
-                    Close
-                  </Button>
-                </Box>
+                    <Chip
+                      icon={<TwitterIcon style={{ color: "#1DA1F2" }} />}
+                      label='Twitter Connected'
+                      sx={{
+                        bgcolor: "rgba(29, 161, 242, 0.2)",
+                        color: "#1DA1F2",
+                        borderRadius: "8px",
+                        py: 1,
+                        px: 1,
+                        "& .MuiChip-label": {
+                          px: 1,
+                        },
+                      }}
+                    />
+                    <Button
+                      variant='outlined'
+                      onClick={() => setTwitterModalOpen(false)}
+                      sx={{
+                        color: "white",
+                        borderColor: "rgba(255, 255, 255, 0.3)",
+                        "&:hover": {
+                          borderColor: "white",
+                          bgcolor: "rgba(255, 255, 255, 0.05)",
+                        },
+                      }}
+                    >
+                      Close
+                    </Button>
+                  </Box>
+                )}
               </>
             ) : (
               <>

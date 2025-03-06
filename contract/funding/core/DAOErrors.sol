@@ -22,4 +22,8 @@ contract DAOErrors {
     error TokenApprovalFailed();
     error TargetAmountNotReached();
     error AddLiquidityFailed(string reason);
+    error NotValidForUniswap();
+    error UniswapPairNotCreated();
+    error UniswapDeploymentFailed(string reason);
+    error NotAuthorized();
 }

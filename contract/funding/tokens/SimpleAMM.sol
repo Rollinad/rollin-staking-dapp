@@ -108,13 +108,19 @@ contract SimpleAMM is ReentrancyGuard, ISimpleAMM {
     }
 
     function _handleInitialLiquidity(uint256 requiredTokens) private {
-        if (IDAOToken(token).balanceOf(msg.sender) < requiredTokens)
+        address sender = msg.sender;
+        
+        // Get token balance and allowance
+        uint256 senderBalance = IDAOToken(token).balanceOf(sender);
+        uint256 senderAllowance = IDAOToken(token).allowance(sender, address(this));
+        
+        if (senderBalance < requiredTokens)
             revert InsufficientBalance();
-        if (IDAOToken(token).allowance(msg.sender, address(this)) < requiredTokens)
+        if (senderAllowance < requiredTokens)
             revert InsufficientAllowance();
 
         bool success = IDAOToken(token).transferFrom(
-            msg.sender,
+            sender,
             address(this),
             requiredTokens
         );
