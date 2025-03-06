@@ -118,7 +118,6 @@ contract ContributionManager is DAOErrors {
 
         if (!basic.isApproved) revert NotApproved();
         if (basic.isClosed) revert AlreadyClosed();
-        if (block.timestamp < basic.createdAt + fundingPeriod) revert FundingPeriodEnded();
         if (basic.currentAmount < basic.targetAmount) revert TargetAmountNotReached();
         if (token.tokenAddress == address(0)) revert TokenNotDeployed();
         if (token.ammAddress == address(0)) revert AMMNotDeployed();
@@ -140,7 +139,7 @@ contract ContributionManager is DAOErrors {
             revert AddLiquidityFailed(reason);
         }
 
-        (bool sent, ) = payable(msg.sender).call{value: creatorAmount}("");
+        (bool sent, ) = payable(basic.creator).call{value: creatorAmount}("");
         if (!sent) revert TransferFailed();
     }
 
