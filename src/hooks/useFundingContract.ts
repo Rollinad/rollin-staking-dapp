@@ -626,3 +626,15 @@ export type ContributorInfo = {
   currentContribution: bigint;
   contributionLimit: bigint;
 };
+
+// General hook for direct contract interaction
+export function useFundingContract() {
+  const { writeContract, data, error, isPending } = useWriteContract();
+
+  return {
+    writeContract,
+    data,
+    error,
+    isPending,
+  };
+}

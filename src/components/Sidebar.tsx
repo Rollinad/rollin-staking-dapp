@@ -16,7 +16,9 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import MenuIcon from "@mui/icons-material/Menu";
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useLocation, useNavigate } from "react-router-dom";
+import { useContractOwner } from "../hooks/useContractOwner";
 
 interface SidebarContainerProps {
   open: boolean;
@@ -106,10 +108,12 @@ interface SidebarProps {
 export const Sidebar = ({ onCollapse }: SidebarProps) => {
   const [stakeOpen, setStakeOpen] = useState(false);
   const [fundingOpen, setFundingOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:600px)");
+  const { isOwner } = useContractOwner();
 
   useEffect(() => {
     if (isMobile) {
@@ -136,6 +140,14 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
       setSidebarOpen(true);
     } else {
       setFundingOpen(!fundingOpen);
+    }
+  };
+
+  const handleAdminClick = () => {
+    if (!isMobile && !sidebarOpen) {
+      setSidebarOpen(true);
+    } else {
+      setAdminOpen(!adminOpen);
     }
   };
 
@@ -356,6 +368,53 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
               </StyledSubListItemButton>
             </List>
           </Collapse>
+          
+          {/* Admin Section - Only visible to contract owner */}
+          {isOwner && (
+            <>
+              <StyledListItemButton
+                onClick={handleAdminClick}
+                selected={location.pathname.startsWith("/admin")}
+              >
+                <StyledListItemIcon>
+                  <AdminPanelSettingsIcon />
+                </StyledListItemIcon>
+                {sidebarOpen && (
+                  <StyledListItemText
+                    primary='Admin'
+                    secondary='Contract management'
+                    sx={{
+                      "& .MuiListItemText-secondary": {
+                        color: "rgba(255, 255, 255, 0.7)",
+                        fontSize: "0.7rem",
+                      },
+                    }}
+                  />
+                )}
+                {sidebarOpen && (adminOpen ? <ExpandLess /> : <ExpandMore />)}
+              </StyledListItemButton>
+              
+              <Collapse in={adminOpen && sidebarOpen} timeout='auto' unmountOnExit>
+                <List component='div' disablePadding>
+                  <StyledSubListItemButton
+                    selected={isCurrentRoute("/admin/proposals")}
+                    onClick={() => handleNavigation("/admin/proposals")}
+                  >
+                    <StyledListItemText
+                      primary='Review Proposals'
+                      secondary='Approve new proposals'
+                      sx={{
+                        "& .MuiListItemText-secondary": {
+                          color: "rgba(255, 255, 255, 0.7)",
+                          fontSize: "0.7rem",
+                        },
+                      }}
+                    />
+                  </StyledSubListItemButton>
+                </List>
+              </Collapse>
+            </>
+          )}
         </List>
       </SidebarContainer>
     </>

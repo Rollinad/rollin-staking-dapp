@@ -18,7 +18,9 @@ import { DepositToken } from "./components/staking/DepositToken";
 import { CreateProposal } from "./components/funding/CreateProposal";
 import UserRegistration from "./components/funding/UserRegistration";
 import { BecomeCreator } from "./components/BecomeCreator";
+import { AdminProposalReview } from "./components/funding/AdminProposalReview";
 import { useUserManagement } from "./hooks/useFundingContract";
+import { useContractOwner } from "./hooks/useContractOwner";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -47,6 +49,7 @@ export const App = () => {
   
   // Get user data from contract
   const { userData } = useUserManagement();
+  const { isOwner } = useContractOwner();
   const isRegistered = userData?.isRegistered || false;
 
   useEffect(() => {
@@ -136,6 +139,11 @@ export const App = () => {
                       <Route path='contributions' element={<MyContributions />} />
                       <Route path="register" element={<UserRegistration />} />
                       <Route path="become-creator" element={<BecomeCreator />} />
+                    </Route>
+
+                    {/* Admin Routes - Only accessible to contract owner */}
+                    <Route path='/admin'>
+                      <Route path='proposals' element={<AdminProposalReview />} />
                     </Route>
 
                     {/* Default routes */}
