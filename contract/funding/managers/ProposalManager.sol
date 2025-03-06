@@ -14,7 +14,7 @@ contract ProposalManager {
     address public immutable contributionManager;
     uint256 public immutable lpPercentage;
     uint8 public constant TOKEN_DECIMALS = 18;
-    uint256 public constant ALLOCATION_PERCENTAGE = 80;
+    uint256 public constant ALLOCATION_PERCENTAGE = 0; // Changed from 80 to 0 - creator gets no tokens, all tokens managed by ContributionManager
     uint256 public constant PERCENTAGE_BASE = 100;
     uint256 public constant PRICE_PRECISION = 1e18;
 
@@ -57,15 +57,20 @@ contract ProposalManager {
         if (!DAOLib.validateProposalParameters(targetAmount, tokenSupply, lpPercentage))
             revert InvalidParameters();
 
-        uint256 allocationSupply = (tokenSupply * ALLOCATION_PERCENTAGE) / PERCENTAGE_BASE;
-        uint256 contributionPrice = (targetAmount * PRICE_PRECISION) / allocationSupply;
+        // With 0% allocation to creator, all tokens are managed by ContributionManager
+        // so we calculate prices based on the full token supply
+        uint256 allocationSupply = 0; // No tokens allocated to creator
+        
+        // Calculate token price using the full token supply
         uint256 tokenPrice = DAOLib.calculateInitialTokenPrice(
             targetAmount,
-            tokenSupply - allocationSupply,
+            tokenSupply,
             lpPercentage
         );
-
-        if (tokenPrice < contributionPrice) revert InvalidParameters();
+        
+        // With 0% creator allocation, we calculate contribution price differently
+        // Now contributors get tokens based on their contribution relative to the target
+        uint256 contributionPrice = (targetAmount * PRICE_PRECISION) / tokenSupply;
         
         // Validate market cap if using Uniswap
         if (useUniswap && initialMarketCap == 0) {

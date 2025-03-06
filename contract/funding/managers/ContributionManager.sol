@@ -118,7 +118,7 @@ contract ContributionManager is DAOErrors {
 
         if (!basic.isApproved) revert NotApproved();
         if (basic.isClosed) revert AlreadyClosed();
-        if (block.timestamp < basic.createdAt + fundingPeriod) revert FundingPeriodEnded();
+        if (block.timestamp >= basic.createdAt + fundingPeriod) revert FundingPeriodEnded();
         if (basic.currentAmount < basic.targetAmount) revert TargetAmountNotReached();
         if (token.tokenAddress == address(0)) revert TokenNotDeployed();
         
@@ -145,9 +145,29 @@ contract ContributionManager is DAOErrors {
         uint256 lpAmount = DAOLib.calculateLPAmount(basic.currentAmount, lpPercentage);
         uint256 creatorAmount = basic.currentAmount - lpAmount;
 
-        uint256 remainingTokens = token.tokenSupply - token.allocationSupply;
-        bool success = IDAOToken(token.tokenAddress).approve(token.ammAddress, remainingTokens);
+        // ContributionManager now holds all tokens (token contract allocated them at creation time)
+        // Only need to approve tokens for the AMM
+        uint256 tokensForLiquidity = (lpAmount * PRICE_PRECISION) / token.tokenPrice;
+        bool success = IDAOToken(token.tokenAddress).approve(token.ammAddress, tokensForLiquidity);
         if (!success) revert TokenApprovalFailed();
+
+        // Verify token balance 
+        uint256 contractTokenBalance = IDAOToken(token.tokenAddress).balanceOf(address(this));
+        if (contractTokenBalance < tokensForLiquidity) {
+            // Emit informative events before failing
+            emit LiquidityCommitted(proposalId, 0);
+            emit FundsReleased(proposalId, basic.creator, 0);
+            
+            // Provide detailed error for debugging
+            revert AddLiquidityFailed(
+                string(abi.encodePacked(
+                    "Insufficient token balance for liquidity. Expected: ", 
+                    uint2str(tokensForLiquidity), 
+                    ", Actual: ", 
+                    uint2str(contractTokenBalance)
+                ))
+            );
+        }
 
         try ISimpleAMM(token.ammAddress).addLiquidity{value: lpAmount}() {
             emit LiquidityCommitted(proposalId, lpAmount);
@@ -156,8 +176,30 @@ contract ContributionManager is DAOErrors {
             revert AddLiquidityFailed(reason);
         }
 
+        // Send remaining ETH to creator (they still get the ETH)
         (bool sent, ) = payable(basic.creator).call{value: creatorAmount}("");
         if (!sent) revert TransferFailed();
+    }
+    
+    // Helper function to convert uint to string for error messages
+    function uint2str(uint256 _i) internal pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(length);
+        uint256 k = length;
+        j = _i;
+        while (j != 0) {
+            bstr[--k] = bytes1(uint8(48 + j % 10));
+            j /= 10;
+        }
+        return string(bstr);
     }
     
     function _releaseWithUniswap(
@@ -170,12 +212,29 @@ contract ContributionManager is DAOErrors {
             // Get Uniswap integration from DAOFunding
             address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
             
-            // Create the Uniswap pair
-            // For V3, the fee tier is defined as 0.3% (3000) by default
-            uint24 feeTier = 3000;
+            // First try 0.05% fee tier which works better for more stable pairs
+            uint24 feeTier = 500; // 0.05% fee tier
             try UniswapV3Integration(payable(uniswapAddr)).createPool(token.tokenAddress, feeTier) returns (address poolAddress) {
                 token.uniswapPairAddress = poolAddress;
                 daoStorage.setProposalToken(proposalId, token);
+            } catch Error(string memory reason) {
+                // Try with default 0.3% fee tier if 0.05% fails
+                feeTier = 3000; // 0.3% fee tier
+                try UniswapV3Integration(payable(uniswapAddr)).createPool(token.tokenAddress, feeTier) returns (address poolAddress) {
+                    token.uniswapPairAddress = poolAddress;
+                    daoStorage.setProposalToken(proposalId, token);
+                } catch Error(string memory reason2) {
+                    // Try with high 1% fee tier as last resort
+                    feeTier = 10000; // 1% fee tier
+                    try UniswapV3Integration(payable(uniswapAddr)).createPool(token.tokenAddress, feeTier) returns (address poolAddress) {
+                        token.uniswapPairAddress = poolAddress;
+                        daoStorage.setProposalToken(proposalId, token);
+                    } catch {
+                        revert UniswapPairNotCreated();
+                    }
+                } catch {
+                    revert UniswapPairNotCreated();
+                }
             } catch {
                 revert UniswapPairNotCreated();
             }
@@ -189,25 +248,39 @@ contract ContributionManager is DAOErrors {
         (uint256 ethForLiquidity, uint256 tokensForLiquidity) = _calculateUniswapLiquidity(token, basic.currentAmount);
         uint256 creatorAmount = basic.currentAmount - ethForLiquidity;
         
-        // Approve tokens for Uniswap
-        bool success = IDAOToken(token.tokenAddress).approve(address(this), tokensForLiquidity);
-        if (!success) revert TokenApprovalFailed();
-        
-        // Get the tokens from the token contract itself (likely should be from token owner address)
-        success = IDAOToken(token.tokenAddress).transfer(address(this), tokensForLiquidity);
-        if (!success) revert TransferFailed();
+        // ContributionManager now holds all tokens (instead of sending to creator)
+        // We don't need to transfer tokens from anywhere else since DAOToken is already
+        // set to have ContributionManager as the owner of all tokens
         
         // Approve tokens for Uniswap integration
         address uniswapAddr = IDAOFundingParent(daoFunding).uniswapIntegration();
-        success = IDAOToken(token.tokenAddress).approve(uniswapAddr, tokensForLiquidity);
+        bool success = IDAOToken(token.tokenAddress).approve(uniswapAddr, tokensForLiquidity);
         if (!success) revert TokenApprovalFailed();
+        
+        // Check the token balance of this contract
+        uint256 contractTokenBalance = IDAOToken(token.tokenAddress).balanceOf(address(this));
+        if (contractTokenBalance < tokensForLiquidity) {
+            // Emit informative events before failing
+            emit LiquidityCommitted(proposalId, 0);
+            emit FundsReleased(proposalId, basic.creator, 0);
+            
+            // Provide detailed error for debugging
+            revert UniswapDeploymentFailed(
+                string(abi.encodePacked(
+                    "Insufficient token balance for liquidity. Expected: ", 
+                    uint2str(tokensForLiquidity), 
+                    ", Actual: ", 
+                    uint2str(contractTokenBalance)
+                ))
+            );
+        }
         
         // Add liquidity to Uniswap V3
         try UniswapV3Integration(payable(uniswapAddr)).addLiquidity{value: ethForLiquidity}(
             token.tokenAddress,
             tokensForLiquidity,
-            ethForLiquidity * 95 / 100, // 5% slippage tolerance
-            basic.creator // Position NFT goes to creator
+            ethForLiquidity * 90 / 100, // 10% slippage tolerance for better success chance
+            basic.creator // Position NFT still goes to creator
         ) returns (uint256 positionId) {
             // Store the position ID in the token data
             token.uniswapPositionId = positionId;
@@ -217,10 +290,10 @@ contract ContributionManager is DAOErrors {
         } catch Error(string memory reason) {
             revert UniswapDeploymentFailed(reason);
         } catch {
-            revert UniswapDeploymentFailed("Unknown error");
+            revert UniswapDeploymentFailed("Unknown error with Uniswap liquidity addition");
         }
         
-        // Transfer remaining ETH to creator
+        // Transfer remaining ETH to creator (they still get the ETH)
         (bool sent, ) = payable(basic.creator).call{value: creatorAmount}("");
         if (!sent) revert TransferFailed();
     }

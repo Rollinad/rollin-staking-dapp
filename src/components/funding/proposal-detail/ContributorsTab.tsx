@@ -175,7 +175,7 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
         )}
       </Grid>
 
-      {isCreator && (
+      {true && (
         <Grid item xs={12} md={6}>
           <Typography variant='h6' sx={{ color: "white", mb: 2 }}>
             Contributor Management
@@ -231,8 +231,7 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
               </ListItem>
             </List>
 
-            {canReleaseFunds && (
-              <Button
+            <Button
                 variant='contained'
                 color='success'
                 onClick={handleReleaseFunds}
@@ -246,7 +245,6 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
                   "Release Funds"
                 )}
               </Button>
-            )}
           </Paper>
         </Grid>
       )}

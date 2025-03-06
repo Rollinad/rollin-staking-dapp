@@ -14,6 +14,13 @@ library DAOLib {
         uint256 targetAmount,
         uint256 allocationSupply
     ) internal pure returns (uint256) {
+        // If we're not using creator allocation (allocationSupply == 0),
+        // we need an alternative calculation that doesn't divide by zero
+        if (allocationSupply == 0) {
+            // In this case, we use a direct proportion of the contribution to target amount
+            // to determine what fraction of all tokens they get
+            return contribution; // Returned value will be used with contributionPrice for final allocation
+        }
         return (contribution * allocationSupply) / targetAmount;
     }
 
@@ -90,16 +97,27 @@ library DAOLib {
             "Limit exceeded"
         );
 
-        tokenAmount = calculateTokenAllocation(
-            amount,
-            proposalBasic.targetAmount,
-            proposalToken.allocationSupply
-        );
+        // Calculate token allocation - with zero allocation to creator, 
+        // we use contributionPrice directly to determine token allocation in ContributionManager.sol
+        if (proposalToken.allocationSupply == 0) {
+            // Don't transfer tokens immediately, just return the amount
+            // The tokens will be held by the ContributionManager until releaseFunds is called
+            return amount;
+        } else {
+            // Legacy mode with creator allocation
+            tokenAmount = calculateTokenAllocation(
+                amount,
+                proposalBasic.targetAmount,
+                proposalToken.allocationSupply
+            );
 
-        require(
-            IERC20(proposalToken.tokenAddress).transfer(contributor, tokenAmount),
-            "Transfer failed"
-        );
+            require(
+                IERC20(proposalToken.tokenAddress).transfer(contributor, tokenAmount),
+                "Transfer failed"
+            );
+            
+            return tokenAmount;
+        }
     }
 
     function handleWithdrawal(
