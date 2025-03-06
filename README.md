@@ -2,7 +2,7 @@
 
 A comprehensive DeFi platform for staking cryptocurrency tokens, swapping between tokens, and participating in DAO funding opportunities.
 
-![Rollin Staking DApp](/public/icon.png)
+![Rollin DApp](/public/icon.png)
 
 ## Features
 
