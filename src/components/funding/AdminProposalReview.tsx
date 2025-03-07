@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Box, 
   Paper, 
@@ -21,23 +21,42 @@ import { useProposalQueries, useProposalManagement } from '../../hooks/useFundin
 import { stringToColor } from '../../utils/stringToColor';
 import { ProposalView } from '../../types/funding';
 import { useSnackbar } from '../../contexts/SnackbarContext';
-import { DAO_FUNDING_CONTRACT_ADDRESS } from '../../constants';
 
 export const AdminProposalReview = () => {
   const { address: walletAddress } = useAccount();
   const { showSnackbar } = useSnackbar();
   const [isApproving, setIsApproving] = useState<{ [key: number]: boolean }>({});
   
-  // Get all proposals that have not been approved yet
-  const { data: pendingProposals, isLoading, refetch } = useProposalQueries().useFilteredProposals(
-    false, // onlyActive = false to get all
-    false  // onlyApproved = false to get unapproved proposals
+  // Get total proposal count
+  const { data: totalProposalsData } = useProposalQueries().useTotalProposals();
+  const totalProposalsCount = totalProposalsData ? totalProposalsData as bigint : 100n;
+  
+  // Get all proposals regardless of status
+  const { data: allProposalsData, isLoading, refetch } = useProposalQueries().useProposalsPaginated(
+    0n, // Start from the first proposal
+    totalProposalsCount // Get all proposals up to the total count
   );
-
+  
+  // Safely extract proposals array with type checking
+  const extractProposals = (): ProposalView[] => {
+    if (!allProposalsData) return [];
+    
+    // Contract returns tuple [ProposalView[], bigint]
+    const proposalsData = allProposalsData as any;
+    if (Array.isArray(proposalsData) && proposalsData.length > 0 && Array.isArray(proposalsData[0])) {
+      return proposalsData[0] as ProposalView[];
+    }
+    return [];
+  };
+  
+  // Get proposals and add ID
+  const allProposals = extractProposals().map((proposal, index) => ({
+    ...proposal,
+    proposalId: index // The index in the array corresponds to the proposalId
+  }));
+  
   // Filter to get only non-approved proposals
-  const unapprovedProposals = pendingProposals 
-    ? (pendingProposals as ProposalView[]).filter(proposal => !proposal.isApproved)
-    : [];
+  const unapprovedProposals = allProposals.filter(proposal => !proposal.isApproved);
 
   const { approveProposal } = useProposalManagement();
 
@@ -136,6 +155,9 @@ export const AdminProposalReview = () => {
               ? Number((proposal.currentAmount * 100n) / proposal.targetAmount)
               : 0;
             
+            // Get the proposalId from the proposal object
+            const proposalId = proposal.proposalId as number;
+            
             return (
               <Grid item xs={12} sm={6} md={4} key={index}>
                 <Card 
@@ -166,6 +188,12 @@ export const AdminProposalReview = () => {
                     <Typography variant="h6" component="div" sx={{ mb: 1 }}>
                       {proposal.tokenName}
                     </Typography>
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2" color="rgba(255, 255, 255, 0.6)">
+                        ID: {proposalId}
+                      </Typography>
+                    </Box>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <Avatar 
@@ -214,11 +242,11 @@ export const AdminProposalReview = () => {
                       variant="contained" 
                       fullWidth
                       color="success"
-                      onClick={() => handleApproveProposal(index)}
-                      disabled={isApproving[index]}
+                      onClick={() => handleApproveProposal(proposalId)}
+                      disabled={isApproving[proposalId]}
                       sx={{ borderRadius: 2 }}
                     >
-                      {isApproving[index] ? (
+                      {isApproving[proposalId] ? (
                         <>
                           <CircularProgress size={24} sx={{ mr: 1, color: 'white' }} />
                           Approving...
