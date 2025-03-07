@@ -32,6 +32,7 @@ import {
   ContributorCounts,
   ContributorInfo,
 } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -116,6 +117,7 @@ export const ProposalDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const proposalId = id ? BigInt(id) : undefined;
   const navigate = useNavigate();
+  const { address } = useAccount();
 
   // Local state
   const [tabValue, setTabValue] = useState<number>(0);
@@ -393,6 +395,12 @@ export const ProposalDetail: React.FC = () => {
     );
   }
 
+  let isCreatorValue = false;
+  if (proposalBasicData) {
+    const basicData = proposalBasicData as ProposalBasic;
+    isCreatorValue = basicData.creator.toLowerCase() === address?.toLowerCase();
+  }
+
   // If critical data is loaded, proceed with rendering the real UI
   if (!isCriticalDataLoading) {
     // Type assertions for clarity
@@ -413,9 +421,8 @@ export const ProposalDetail: React.FC = () => {
         ? Number((basicData.currentAmount * 100n) / basicData.targetAmount)
         : 0;
 
-    // Determine if this is the user's own proposal
-    const isCreator =
-      basicData.creator.toLowerCase() === userData?.xAccountId?.toLowerCase();
+    // Use the calculated isCreator value
+    const isCreator = isCreatorValue;
 
     // Determine if funding period has ended
     const isFundingEnded = statusData.timeRemaining === 0n;
@@ -582,6 +589,7 @@ export const ProposalDetail: React.FC = () => {
                 approvedContributors={approvedContributors}
                 isCreator={isCreator}
                 canReleaseFunds={canReleaseFunds}
+                proposalId={proposalId}
                 handleReleaseFunds={handleReleaseFunds}
                 contributionPending={contributionPending}
                 contributionConfirming={contributionConfirming}

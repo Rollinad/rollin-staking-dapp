@@ -19,6 +19,7 @@ import { CreateProposal } from "./components/funding/CreateProposal";
 import UserRegistration from "./components/funding/UserRegistration";
 import { BecomeCreator } from "./components/BecomeCreator";
 import { AdminProposalReview } from "./components/funding/AdminProposalReview";
+import { ApproveContributors } from "./components/funding/ApproveContributors";
 import { useUserManagement } from "./hooks/useFundingContract";
 import { useContractOwner } from "./hooks/useContractOwner";
 
@@ -139,6 +140,7 @@ export const App = () => {
                       <Route path='contributions' element={<MyContributions />} />
                       <Route path="register" element={<UserRegistration />} />
                       <Route path="become-creator" element={<BecomeCreator />} />
+                      <Route path="manage-contributors/:id" element={<ApproveContributors />} />
                     </Route>
 
                     {/* Admin Routes - Only accessible to contract owner */}

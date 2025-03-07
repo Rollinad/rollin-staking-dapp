@@ -19,12 +19,14 @@ import { stringToVibrantColor } from "../../../utils/stringToColor";
 import PeopleIcon from "@mui/icons-material/People";
 import { ContributorCounts, ContributorInfo } from "../../../types/funding";
 import { useAccount } from "wagmi";
+import { useNavigate } from "react-router-dom";
 
 interface ContributorsTabProps {
   contributorCounts: ContributorCounts | null;
   approvedContributors: [ContributorInfo[], bigint] | null;
   isCreator: boolean;
   canReleaseFunds: boolean;
+  proposalId?: bigint;
   handleReleaseFunds: () => void;
   contributionPending: boolean;
   contributionConfirming: boolean;
@@ -35,11 +37,13 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
   approvedContributors,
   isCreator,
   canReleaseFunds,
+  proposalId,
   handleReleaseFunds,
   contributionPending,
   contributionConfirming,
 }) => {
   const { chain } = useAccount();
+  const navigate = useNavigate();
 
   return (
     <Grid container spacing={3} sx={{ padding: "24px" }}>
@@ -234,22 +238,31 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
               </ListItem>
             </List>
 
-            {canReleaseFunds && (
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+              {canReleaseFunds && (
+                <Button
+                  variant='contained'
+                  color='success'
+                  onClick={handleReleaseFunds}
+                  disabled={contributionPending || contributionConfirming}
+                  sx={{ flexGrow: 1 }}
+                >
+                  {contributionPending || contributionConfirming ? (
+                    <CircularProgress size={24} sx={{ mr: 1 }} />
+                  ) : null}
+                  Release Funds
+                </Button>
+              )}
+              
               <Button
                 variant='contained'
-                color='success'
-                onClick={handleReleaseFunds}
-                disabled={contributionPending || contributionConfirming}
-                fullWidth
-                sx={{ mt: 2 }}
+                color='primary'
+                onClick={() => navigate(`/funding/manage-contributors/${proposalId}`)}
+                sx={{ flexGrow: 1 }}
               >
-                {contributionPending || contributionConfirming ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  "Release Funds"
-                )}
+                Manage Contributors
               </Button>
-            )}
+            </Box>
           </Paper>
         </Grid>
       )}
