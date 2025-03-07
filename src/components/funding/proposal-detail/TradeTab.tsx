@@ -14,6 +14,7 @@ import {
 import { formatEther } from "viem";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { ProposalToken } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface TradeTabProps {
   proposalToken: ProposalToken;
@@ -36,6 +37,8 @@ export const TradeTab: React.FC<TradeTabProps> = ({
   tradingError,
   balanceLoading = false,
 }) => {
+  const { chain } = useAccount();
+
   console.log("TradeTab rendering with:", { 
     tokenSymbol: proposalToken.tokenSymbol,
     tokenPrice: tokenPrice ? formatEther(tokenPrice) : null,
@@ -147,7 +150,7 @@ export const TradeTab: React.FC<TradeTabProps> = ({
                     variant='body2'
                     sx={{ color: "white", fontWeight: "bold" }}
                   >
-                    {formatEther(tokenPrice)} ETH per{" "}
+                    {formatEther(tokenPrice)} {chain?.nativeCurrency.symbol} per{" "}
                     {proposalToken.tokenSymbol}
                   </Typography>
                 )}

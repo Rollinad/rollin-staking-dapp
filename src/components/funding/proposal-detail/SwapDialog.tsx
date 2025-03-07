@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { formatEther } from "viem";
 import { ProposalToken } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface SwapDialogProps {
   isOpen: boolean;
@@ -42,6 +43,8 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
   tradingConfirming,
   tradingError,
 }) => {
+  const { chain } = useAccount();
+
   return (
     <Dialog
       open={isOpen}
@@ -67,7 +70,7 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
         <TextField
           label={
             swapType === "buy"
-              ? "ETH Amount"
+              ? `${chain?.nativeCurrency.symbol} Amount`
               : `${proposalToken.tokenSymbol} Amount`
           }
           fullWidth
@@ -76,7 +79,7 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
           InputProps={{
             endAdornment: (
               <InputAdornment position="end" sx={{ color: "white" }}>
-                {swapType === "buy" ? "ETH" : proposalToken.tokenSymbol}
+                {swapType === "buy" ? chain?.nativeCurrency.symbol : proposalToken.tokenSymbol}
               </InputAdornment>
             ),
           }}
@@ -124,7 +127,7 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
                       parseFloat(swapAmount) * parseFloat(formatEther(tokenPrice))
                     ).toFixed(6)
                   : "0"}{" "}
-                ETH
+                {chain?.nativeCurrency.symbol}
               </span>.
             </Typography>
           )}

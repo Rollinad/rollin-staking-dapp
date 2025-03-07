@@ -23,7 +23,7 @@ import { ProposalView } from '../../types/funding';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 
 export const AdminProposalReview = () => {
-  const { address: walletAddress } = useAccount();
+  const { address: walletAddress, chain } = useAccount();
   const { showSnackbar } = useSnackbar();
   const [isApproving, setIsApproving] = useState<{ [key: number]: boolean }>({});
   
@@ -214,7 +214,7 @@ export const AdminProposalReview = () => {
                     <Divider sx={{ my: 1.5, bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
                     
                     <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
-                      Target: {formatEther(proposal.targetAmount)} ETH
+                      Target: {formatEther(proposal.targetAmount)} {chain?.nativeCurrency.symbol}
                     </Typography>
                     
                     <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
@@ -222,7 +222,7 @@ export const AdminProposalReview = () => {
                     </Typography>
 
                     <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
-                      Token Price: {Number(proposal.tokenPrice) / 10**18} ETH
+                      Token Price: {Number(proposal.tokenPrice) / 10**18} {chain?.nativeCurrency.symbol}
                     </Typography>
                     
                     <Box sx={{ mt: 2 }}>

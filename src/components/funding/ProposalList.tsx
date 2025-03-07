@@ -25,6 +25,7 @@ import { formatEther } from 'viem';
 import { useProposalQueries, useUserManagement } from '../../hooks/useFundingContract';
 import { stringToColor } from '../../utils/stringToColor';
 import { ProposalView } from '../../types/funding';
+import { useAccount } from 'wagmi';
 
 export const ProposalList = () => {
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'completed'
@@ -32,6 +33,7 @@ export const ProposalList = () => {
   const [showApprovedOnly, setShowApprovedOnly] = useState(true);
   const itemsPerPage = 6;
   const navigate = useNavigate();
+  const { chain } = useAccount();
   
   const { userData } = useUserManagement();
   
@@ -317,11 +319,11 @@ export const ProposalList = () => {
                       <Divider sx={{ my: 1.5, bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
                       
                       <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
-                        Target: {formatEther(proposal.targetAmount)} ETH
+                        Target: {formatEther(proposal.targetAmount)} {chain?.nativeCurrency.symbol}
                       </Typography>
                       
                       <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
-                        Raised: {formatEther(proposal.currentAmount)} ETH
+                        Raised: {formatEther(proposal.currentAmount)} {chain?.nativeCurrency.symbol}
                       </Typography>
                       
                       <Box sx={{ mt: 2 }}>

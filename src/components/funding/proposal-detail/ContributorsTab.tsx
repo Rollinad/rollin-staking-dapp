@@ -18,6 +18,7 @@ import { formatEther } from "viem";
 import { stringToVibrantColor } from "../../../utils/stringToColor";
 import PeopleIcon from "@mui/icons-material/People";
 import { ContributorCounts, ContributorInfo } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface ContributorsTabProps {
   contributorCounts: ContributorCounts | null;
@@ -38,6 +39,8 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
   contributionPending,
   contributionConfirming,
 }) => {
+  const { chain } = useAccount();
+
   return (
     <Grid container spacing={3} sx={{ padding: "24px" }}>
       <Grid item xs={12} md={6}>
@@ -139,7 +142,7 @@ export const ContributorsTab: React.FC<ContributorsTabProps> = ({
                         sx={{ color: "rgba(255, 255, 255, 0.7)" }}
                       >
                         Contributed:{" "}
-                        {formatEther(contributor.currentContribution)} ETH
+                        {formatEther(contributor.currentContribution)} {chain?.nativeCurrency.symbol}
                       </Typography>
                     }
                   />

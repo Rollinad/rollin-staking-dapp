@@ -26,6 +26,7 @@ import {
   ContributionInfo,
   UserData,
 } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface ContributeTabProps {
   proposalBasic: ProposalBasic;
@@ -66,6 +67,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
 }) => {
   // Check if Twitter is linked
   const { user } = usePrivy();
+  const { chain } = useAccount();
   const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter_oauth');
   
   // Derived state
@@ -206,7 +208,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
     <>
       <Typography variant='body1' sx={{ mb: 3 }}>
         You are approved to contribute up to{" "}
-        {formatEther(contributionInfo?.limit || 0n)} ETH to this proposal.
+        {formatEther(contributionInfo?.limit || 0n)} {chain?.nativeCurrency.symbol} to this proposal.
       </Typography>
 
       <TextField
@@ -217,7 +219,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         InputProps={{
           endAdornment: (
             <InputAdornment position='end' sx={{ color: "white" }}>
-              ETH
+              {chain?.nativeCurrency.symbol}
             </InputAdornment>
           ),
         }}
@@ -269,7 +271,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
       {isExceedingLimit && (
         <Alert severity='error' sx={{ mt: 2 }}>
           Your contribution exceeds your approved limit. You can contribute up
-          to {formatEther(remainingAllowance)} more ETH.
+          to {formatEther(remainingAllowance)} more {chain?.nativeCurrency.symbol}.
         </Alert>
       )}
     </>
@@ -311,7 +313,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         <ListItem>
           <ListItemText
             primary='Target amount'
-            secondary={`${formatEther(proposalBasic.targetAmount)} ETH`}
+            secondary={`${formatEther(proposalBasic.targetAmount)} ${chain?.nativeCurrency.symbol}`}
             secondaryTypographyProps={{ color: "rgba(255, 255, 255, 0.7)" }}
           />
         </ListItem>
@@ -320,7 +322,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         <ListItem>
           <ListItemText
             primary='Current amount raised'
-            secondary={`${formatEther(proposalBasic.currentAmount)} ETH (${
+            secondary={`${formatEther(proposalBasic.currentAmount)} ${chain?.nativeCurrency.symbol} (${
               proposalBasic.targetAmount > 0n
                 ? Math.min(
                     Number(
@@ -343,7 +345,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
               hasContributed
                 ? `${formatEther(
                     contributionInfo?.currentContribution || 0n
-                  )} ETH`
+                  )} ${chain?.nativeCurrency.symbol}`
                 : "You haven't contributed yet"
             }
             secondaryTypographyProps={{ color: "rgba(255, 255, 255, 0.7)" }}
@@ -356,7 +358,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
             <ListItem>
               <ListItemText
                 primary='Your contribution limit'
-                secondary={`${formatEther(contributionInfo.limit)} ETH`}
+                secondary={`${formatEther(contributionInfo.limit)} ${chain?.nativeCurrency.symbol}`}
                 secondaryTypographyProps={{
                   color: "rgba(255, 255, 255, 0.7)",
                 }}
@@ -386,7 +388,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         <ListItem>
           <ListItemText
             primary='Token exchange rate'
-            secondary={`1 ETH = ${(
+            secondary={`1 ${chain?.nativeCurrency.symbol} = ${(
               Number(PRICE_PRECISION) / Number(proposalToken.contributionPrice)
             ).toFixed(6)} ${proposalToken.tokenSymbol}`}
             secondaryTypographyProps={{ color: "rgba(255, 255, 255, 0.7)" }}
@@ -414,7 +416,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
               Your contribution
             </Typography>
             <Typography variant='h6'>
-              {formatEther(contributionInfo?.currentContribution || 0n)} ETH
+              {formatEther(contributionInfo?.currentContribution || 0n)} {chain?.nativeCurrency.symbol}
             </Typography>
           </Box>
         </Box>

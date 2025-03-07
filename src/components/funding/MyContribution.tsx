@@ -1,5 +1,4 @@
-// src/components/funding/MyContributions.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Paper, 
@@ -29,6 +28,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import { useContributionManagement, useProposalQueries, useUserManagement } from '../../hooks/useFundingContract';
 import { ProposalView } from '../../types/funding';
+import { useAccount } from 'wagmi';
 
 // Define an interface for contribution data
 interface ContributionData {
@@ -48,6 +48,7 @@ type ContributionInfoTuple = [bigint, bigint, bigint, boolean, boolean];
 
 export const MyContributions = () => {
   const navigate = useNavigate();
+  const { chain } = useAccount();
   const { userData, userDataLoading } = useUserManagement();
   
   // State to track the current proposal we're checking
@@ -282,7 +283,7 @@ export const MyContributions = () => {
                       />
                     </TableCell>
                     <TableCell align="right">
-                      {formatEther(contribution.currentContribution)} ETH
+                      {formatEther(contribution.currentContribution)} {chain?.nativeCurrency.symbol}
                     </TableCell>
                     <TableCell align="right">
                       {formatEther(contribution.tokenAllocation)} {proposal.tokenSymbol}
@@ -363,7 +364,7 @@ export const MyContributions = () => {
                 <Typography variant="h4">
                   {contributions.reduce((total, item) => 
                     total + parseFloat(formatEther(item.contribution.currentContribution)), 0
-                  ).toFixed(4)} ETH
+                  ).toFixed(4)} {chain?.nativeCurrency.symbol}
                 </Typography>
               </CardContent>
             </Card>

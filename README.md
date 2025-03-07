@@ -15,7 +15,7 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 
 ### Token Swapping
 - Swap between different tokens using 0x Protocol integration
-- Support for native (ETH) and ERC20 token swaps
+- Support for native token and ERC20 token swaps
 - Both standard and gasless swapping options
 - Real-time price quotes and efficient trade execution
 

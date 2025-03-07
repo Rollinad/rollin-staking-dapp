@@ -23,9 +23,11 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { useProposalQueries, useUserManagement } from '../../hooks/useFundingContract';
 import { ProposalView } from '../../types/funding';
+import { useAccount } from 'wagmi';
 
 export const MyProposals = () => {
   const navigate = useNavigate();
+  const { chain } = useAccount();
   const { userData, userDataLoading } = useUserManagement();
   
   // Get proposals created by the current user
@@ -220,7 +222,7 @@ export const MyProposals = () => {
                           Target:
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                          {formatEther(proposal.targetAmount)} ETH
+                          {formatEther(proposal.targetAmount)} {chain?.nativeCurrency.symbol}
                         </Typography>
                       </Box>
                       
@@ -229,7 +231,7 @@ export const MyProposals = () => {
                           Raised:
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                          {formatEther(proposal.currentAmount)} ETH
+                          {formatEther(proposal.currentAmount)} {chain?.nativeCurrency.symbol}
                         </Typography>
                       </Box>
                       
