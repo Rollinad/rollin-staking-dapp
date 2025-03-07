@@ -23,6 +23,7 @@ interface TradeTabProps {
   tradingPending: boolean;
   tradingConfirming: boolean;
   tradingError: Error | null;
+  balanceLoading?: boolean;
 }
 
 export const TradeTab: React.FC<TradeTabProps> = ({
@@ -33,9 +34,16 @@ export const TradeTab: React.FC<TradeTabProps> = ({
   tradingPending,
   tradingConfirming,
   tradingError,
+  balanceLoading = false,
 }) => {
+  console.log("TradeTab rendering with:", { 
+    tokenSymbol: proposalToken.tokenSymbol,
+    tokenPrice: tokenPrice ? formatEther(tokenPrice) : null,
+    tokenBalance: tokenBalance ? formatEther(tokenBalance) : null,
+    hasTokens: tokenBalance ? tokenBalance > 0n : false
+  });
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} sx={{ padding: "24px" }}>
       <Grid item xs={12} md={6}>
         <Typography variant='h6' sx={{ color: "white", mb: 2 }}>
           Trade {proposalToken.tokenSymbol} Tokens
@@ -67,11 +75,11 @@ export const TradeTab: React.FC<TradeTabProps> = ({
               color='primary'
               fullWidth
               onClick={() => openSwapDialog("buy")}
-              disabled={tradingPending || tradingConfirming}
+              disabled={tradingPending || tradingConfirming || !tokenPrice}
               startIcon={<SwapHorizIcon />}
               sx={{ py: 1.5 }}
             >
-              Buy Tokens
+              {!tokenPrice ? "Loading Price..." : "Buy Tokens"}
             </Button>
 
             <Button
@@ -81,8 +89,9 @@ export const TradeTab: React.FC<TradeTabProps> = ({
               disabled={
                 tradingPending ||
                 tradingConfirming ||
-                !tokenBalance ||
-                tokenBalance === 0n
+                tokenBalance === undefined ||
+                tokenBalance === null ||
+                tokenBalance <= 0n
               }
               startIcon={<SwapHorizIcon />}
               sx={{
@@ -91,7 +100,11 @@ export const TradeTab: React.FC<TradeTabProps> = ({
                 borderColor: "rgba(255, 255, 255, 0.5)",
               }}
             >
-              Sell Tokens
+              {tokenBalance === undefined || balanceLoading ? 
+                "Loading..." : 
+                tokenBalance && tokenBalance > 0n ? 
+                  "Sell Tokens" : 
+                  "No Tokens to Sell"}
             </Button>
           </Stack>
         </Paper>
@@ -115,14 +128,21 @@ export const TradeTab: React.FC<TradeTabProps> = ({
             </Typography>
 
             <Stack spacing={2}>
-              {tokenPrice && (
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  variant='body2'
+                  sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+                >
+                  Current Price
+                </Typography>
+                {!tokenPrice ? (
                   <Typography
                     variant='body2'
-                    sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+                    sx={{ color: "rgba(255, 255, 255, 0.7)", fontStyle: "italic" }}
                   >
-                    Current Price
+                    Loading price...
                   </Typography>
+                ) : (
                   <Typography
                     variant='body2'
                     sx={{ color: "white", fontWeight: "bold" }}
@@ -130,23 +150,39 @@ export const TradeTab: React.FC<TradeTabProps> = ({
                     {formatEther(tokenPrice)} ETH per{" "}
                     {proposalToken.tokenSymbol}
                   </Typography>
-                </Box>
-              )}
+                )}
+              </Box>
 
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography
                   variant='body2'
                   sx={{ color: "rgba(255, 255, 255, 0.7)" }}
                 >
                   Your Token Balance
                 </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{ color: "white", fontWeight: "bold" }}
-                >
-                  {tokenBalance ? formatEther(tokenBalance) : "0"}{" "}
-                  {proposalToken.tokenSymbol}
-                </Typography>
+                {balanceLoading ? (
+                  <Typography
+                    variant='body2'
+                    sx={{ color: "rgba(255, 255, 255, 0.7)", fontStyle: "italic" }}
+                  >
+                    Loading balance...
+                  </Typography>
+                ) : (
+                  <Typography
+                    variant='body2'
+                    sx={{ color: "white", fontWeight: "bold" }}
+                  >
+                    {tokenBalance !== null && tokenBalance !== undefined 
+                      ? formatEther(tokenBalance) 
+                      : "0"}{" "}
+                    {proposalToken.tokenSymbol}
+                    {tokenBalance && tokenBalance > 0n && (
+                      <span style={{ color: "#4caf50", marginLeft: "4px" }}>
+                        (Available to sell)
+                      </span>
+                    )}
+                  </Typography>
+                )}
               </Box>
 
               <Divider sx={{ bgcolor: "rgba(255, 255, 255, 0.1)" }} />

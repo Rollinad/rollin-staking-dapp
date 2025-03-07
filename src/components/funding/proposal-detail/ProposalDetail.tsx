@@ -276,16 +276,31 @@ export const ProposalDetail: React.FC = () => {
 
   // Handle token swap
   const handleSwap = () => {
-    if (!proposalId || !swapAmount || parseFloat(swapAmount) <= 0) return;
-
-    if (swapType === "buy") {
-      swapETHForTokens(proposalId, swapAmount);
-    } else {
-      swapTokensForETH(proposalId, swapAmount);
+    if (proposalId === undefined || !swapAmount || parseFloat(swapAmount) <= 0) {
+      console.log("Swap validation failed:", { 
+        hasProposalId: !!proposalId, 
+        hasSwapAmount: !!swapAmount, 
+        isAmountPositive: swapAmount ? parseFloat(swapAmount) > 0 : false 
+      });
+      return;
     }
 
-    setSwapAmount("");
-    setIsSwapDialogOpen(false);
+    try {
+      console.log("Executing swap...");
+      if (swapType === "buy") {
+        console.log("Buying tokens with ETH:", { proposalId: proposalId.toString(), amount: swapAmount });
+        swapETHForTokens(proposalId, swapAmount);
+      } else {
+        console.log("Selling tokens for ETH:", { proposalId: proposalId.toString(), amount: swapAmount });
+        swapTokensForETH(proposalId, swapAmount);
+      }
+      
+      console.log("Swap function executed");
+      setSwapAmount("");
+      setIsSwapDialogOpen(false);
+    } catch (error) {
+      console.error("Error executing swap:", error);
+    }
   };
 
   // Open swap dialog
@@ -588,6 +603,7 @@ export const ProposalDetail: React.FC = () => {
                   tradingPending={tradingPending}
                   tradingConfirming={tradingConfirming}
                   tradingError={tradingError}
+                  balanceLoading={balanceLoading}
                 />
               )}
             </TabPanel>

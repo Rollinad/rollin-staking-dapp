@@ -10,6 +10,7 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  Box,
 } from "@mui/material";
 import { formatEther } from "viem";
 import { ProposalToken } from "../../../types/funding";
@@ -47,8 +48,8 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
       onClose={handleClose}
       PaperProps={{
         sx: {
-          bgcolor: "rgba(0, 0, 0, 0.8)",
-          backdropFilter: "blur(20px)",
+          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(10px)",
           color: "white",
           borderRadius: 2,
           border: "1px solid rgba(255, 255, 255, 0.1)",
@@ -56,13 +57,13 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
         },
       }}
     >
-      <DialogTitle>
+      <DialogTitle sx={{ borderBottom: "1px solid rgba(255, 255, 255, 0.1)" }}>
         {swapType === "buy"
           ? `Buy ${proposalToken.tokenSymbol} Tokens`
           : `Sell ${proposalToken.tokenSymbol} Tokens`}
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent sx={{ pt: 3 }}>
         <TextField
           label={
             swapType === "buy"
@@ -74,14 +75,14 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
           onChange={handleSwapAmountChange}
           InputProps={{
             endAdornment: (
-              <InputAdornment position='end' sx={{ color: "white" }}>
+              <InputAdornment position="end" sx={{ color: "white" }}>
                 {swapType === "buy" ? "ETH" : proposalToken.tokenSymbol}
               </InputAdornment>
             ),
           }}
-          variant='outlined'
+          variant="outlined"
           sx={{
-            mt: 2,
+            mt: 1,
             mb: 3,
             input: { color: "white" },
             label: { color: "rgba(255, 255, 255, 0.7)" },
@@ -99,64 +100,82 @@ export const SwapDialog: React.FC<SwapDialogProps> = ({
           }}
         />
 
-        {swapType === "buy" && tokenPrice && (
-          <Typography
-            variant='body2'
-            sx={{ color: "rgba(255, 255, 255, 0.7)", mb: 2 }}
-          >
-            You will receive approximately{" "}
-            {swapAmount && parseFloat(swapAmount) > 0
-              ? (
-                  parseFloat(swapAmount) / parseFloat(formatEther(tokenPrice))
-                ).toFixed(6)
-              : "0"}{" "}
-            {proposalToken.tokenSymbol} tokens.
-          </Typography>
-        )}
+        <Box sx={{ mb: 2, p: 2, bgcolor: "rgba(255, 255, 255, 0.05)", borderRadius: 1 }}>
+          {swapType === "buy" && tokenPrice && (
+            <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+              You will receive approximately{" "}
+              <span style={{ color: "white", fontWeight: "bold" }}>
+                {swapAmount && parseFloat(swapAmount) > 0
+                  ? (
+                      parseFloat(swapAmount) / parseFloat(formatEther(tokenPrice))
+                    ).toFixed(6)
+                  : "0"}{" "}
+                {proposalToken.tokenSymbol}
+              </span> tokens.
+            </Typography>
+          )}
 
-        {swapType === "sell" && tokenPrice && (
-          <Typography
-            variant='body2'
-            sx={{ color: "rgba(255, 255, 255, 0.7)", mb: 2 }}
-          >
-            You will receive approximately{" "}
-            {swapAmount && parseFloat(swapAmount) > 0
-              ? (
-                  parseFloat(swapAmount) * parseFloat(formatEther(tokenPrice))
-                ).toFixed(6)
-              : "0"}{" "}
-            ETH.
-          </Typography>
-        )}
+          {swapType === "sell" && tokenPrice && (
+            <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+              You will receive approximately{" "}
+              <span style={{ color: "white", fontWeight: "bold" }}>
+                {swapAmount && parseFloat(swapAmount) > 0
+                  ? (
+                      parseFloat(swapAmount) * parseFloat(formatEther(tokenPrice))
+                    ).toFixed(6)
+                  : "0"}{" "}
+                ETH
+              </span>.
+            </Typography>
+          )}
+        </Box>
 
         {tradingError && (
-          <Alert severity='error' sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {tradingError.message ||
               "Error processing trade. Please try again."}
           </Alert>
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, pt: 0 }}>
+      <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
         <Button
           onClick={handleClose}
-          sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+          variant="outlined"
+          sx={{ 
+            color: "white", 
+            borderColor: "rgba(255, 255, 255, 0.3)",
+            "&:hover": {
+              borderColor: "rgba(255, 255, 255, 0.5)",
+              backgroundColor: "rgba(255, 255, 255, 0.05)"
+            }
+          }}
         >
           Cancel
         </Button>
 
         <Button
-          variant='contained'
-          onClick={handleSwap}
+          variant="contained"
+          onClick={() => {
+            console.log("Attempting swap:", { swapType, swapAmount, proposalId: proposalToken.tokenAddress });
+            handleSwap();
+          }}
           disabled={
             !swapAmount ||
             parseFloat(swapAmount) <= 0 ||
             tradingPending ||
             tradingConfirming
           }
+          sx={{ 
+            borderRadius: 1,
+            background: swapType === "buy" ? "linear-gradient(90deg, #3f51b5 0%, #2196f3 100%)" : "linear-gradient(90deg, #f44336 0%, #ff9800 100%)",
+            "&:hover": {
+              background: swapType === "buy" ? "linear-gradient(90deg, #303f9f 0%, #1976d2 100%)" : "linear-gradient(90deg, #d32f2f 0%, #f57c00 100%)"
+            }
+          }}
         >
           {tradingPending || tradingConfirming ? (
-            <CircularProgress size={24} />
+            <CircularProgress size={24} sx={{ color: "white" }} />
           ) : swapType === "buy" ? (
             "Buy Tokens"
           ) : (

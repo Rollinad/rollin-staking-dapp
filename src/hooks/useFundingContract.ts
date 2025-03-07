@@ -579,10 +579,11 @@ export function useTokenBalances() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getTokenBalance",
-      args: proposalId ? [proposalId] : undefined,
+      args: proposalId !== undefined ? [proposalId] : undefined,
       query: {
-        enabled: !!proposalId,
+        enabled: proposalId !== undefined,
       },
+      account: address as Address
     });
   };
 
