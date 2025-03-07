@@ -205,7 +205,7 @@ export const CustomConnectButton = () => {
   // Handle unlinking Twitter when there's a wallet mismatch
   const handleUnlinkTwitter = async () => {
     try {
-      await unlinkTwitter("twitter_oauth");
+      await unlinkTwitter();
       showSnackbar("Twitter account unlinked successfully", "success");
       setTwitterModalOpen(false);
     } catch (error) {
