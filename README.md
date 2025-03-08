@@ -4,6 +4,17 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 
 ![Rollinad DApp](/public/icon.png)
 
+## Integrated Partners
+
+<div style="display: flex; align-items: center; gap: 30px; margin-bottom: 20px;">
+  <a href="https://privy.io/" target="_blank">
+    <img src="https://assets-global.website-files.com/6364e65656ab107e465325d2/64797a9c1ce3d0fa07a0e819_blue-logo.svg" alt="Privy" height="50" />
+  </a>
+  <a href="https://0x.org/" target="_blank">
+    <img src="https://0x.org/images/0x_logo_dark.svg" alt="0x Protocol" height="50" />
+  </a>
+</div>
+
 ## Features
 
 ### Staking
@@ -320,32 +331,66 @@ The platform now features a seamless integration with Uniswap after proposals re
 
 ## Tech Stack
 
+### Core Technologies
+- **Languages**: TypeScript, Solidity, JavaScript
+- **Build Tools**: Vite, Webpack
+- **State Management**: React Context API, React Query
+- **Version Control**: Git
+- **CI/CD**: GitHub Actions
+- **Infrastructure**: Vercel
+
 ### Frontend
-- React 18 with TypeScript
-- Vite for fast development and building
-- Material UI for component library
-- React Hook Form for form management
-- React Router for navigation
-- TanStack Query for data fetching
+- **Framework**: React 18
+- **Build System**: Vite
+- **UI Library**: Material UI v5
+- **Styling**: Emotion, styled-components
+- **Form Management**: React Hook Form, Zod
+- **Routing**: React Router v6
+- **Data Fetching**: TanStack Query (React Query)
+- **Animation**: Framer Motion
+- **Internationalization**: i18next
+- **Date & Time**: date-fns
+- **Icons**: Material Icons, custom SVGs
 
 ### Web3 Integration
-- Wagmi for React hooks to interact with Ethereum
-- Viem for type-safe Ethereum interactions
-- Ethers.js for blockchain interactions
-- RainbowKit for wallet connection UI
-- Privy for social login and wallet management
-- 0x Protocol for token swaps
-- Uniswap SDK for bonding curve implementation
+- **Core Libraries**:
+  - Wagmi for React hooks to interact with Ethereum
+  - Viem for type-safe Ethereum interactions
+  - Ethers.js for blockchain interactions
+- **Wallet Connection**:
+  - RainbowKit for intuitive wallet connection UI
+  - Privy for social login and wallet management
+  - WalletConnect v2 support
+- **Protocol Integrations**:
+  - 0x Protocol API for token swaps
+  - Uniswap SDK for bonding curve implementation
+  - Infura/Alchemy for RPC providers
+
+### Smart Contracts
+- **Language**: Solidity ^0.8.17
+- **Development Framework**: Hardhat
+- **Testing**: Chai, Mocha, Waffle
+- **Deployment**: Hardhat deploy scripts
+- **Standards**: ERC20, ERC721
+- **Security**: OpenZeppelin contracts
 
 ### Backend / API
-- Next.js API routes
-- 0x Protocol integration for swaps
-- Permissionless for account abstraction
+- **Framework**: Next.js API routes
+- **Data Validation**: Zod, TypeScript
+- **Authentication**: JWT, NextAuth.js
+- **Integrations**:
+  - 0x Protocol for swap quotes
+  - Permissionless for account abstraction
+  - RPC providers for blockchain data
 
-### Testing & Development
-- TypeScript for type safety
-- ESLint for code quality
-- Concurrently for running multiple development servers
+### DevOps & Quality
+- **Linting**: ESLint, Prettier
+- **Type Checking**: TypeScript, tsc
+- **Testing**: Jest, React Testing Library
+- **Development Utilities**: 
+  - Concurrently for running multiple servers
+  - dotenv for environment variables
+  - Husky for git hooks
 
 ## Architecture Diagrams
 
