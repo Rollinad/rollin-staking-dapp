@@ -26,11 +26,7 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 - Automatic token creation for funded projects
 - Trading platform for proposal tokens via SimpleAMM
 - Comprehensive proposal management with lifecycle states
-
-### Analytics
-- Trade analytics for monitoring swap transactions
-- Detailed tracking of contributions and proposal performance
-- User-friendly dashboards for data visualization
+- **New: Bonding curve integration with Uniswap** after proposals reach funding target 
 
 ## Features by Actor
 
@@ -43,7 +39,7 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 - Browse funding proposals with detailed project information
 - Contribute to funding proposals with cryptocurrency
 - Trade proposal tokens on integrated AMM
-- View transaction history and analytics
+- Access Uniswap liquidity pools for funded projects
 
 ### Pool Creators
 - Create new staking pools for specific ERC20 tokens
@@ -67,7 +63,7 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 - Receive contributions directly to designated wallet
 - Monitor funding progress and analytics
 - Deploy project tokens automatically upon successful funding
-- Provide updates to contributors
+- Leverage Uniswap integration for token liquidity after funding completion
 
 ### Platform Administrators
 - Monitor overall platform metrics
@@ -165,8 +161,16 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
        │      ┌────────────────┐     ┌──────────────▼───────┐
        └─────►│ Project tokens │     │ Trading begins on    │
               │ are created    ├────►│ SimpleAMM            │
-              └────────┬───────┘     └──────────────────────┘
-                       │
+              └────────┬───────┘     └──────────┬───────────┘
+                       │                        │
+                       │                        │
+                       │                        ▼
+                       │            ┌────────────────────────┐
+                       │            │ Bonding curve          │
+                       │            │ integration with       │
+                       │            │ Uniswap established    │
+                       │            └────────────┬───────────┘
+                       │                         │
                        │           Project Execution
                        │      ┌───────────────────────────┐
                        └─────►│ Creator implements project│
@@ -190,9 +194,16 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
        │
        │           Token Trading
        │      ┌────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-       └─────►│ User visits    │     │ Sets price and  │     │ Trade executed  │
-              │ SimpleAMM      ├────►│ amount to trade ├────►│ on SimpleAMM    │
-              │ interface      │     │                 │     │                 │
+       ├─────►│ User visits    │     │ Sets price and  │     │ Trade executed  │
+       │      │ SimpleAMM      ├────►│ amount to trade ├────►│ on SimpleAMM    │
+       │      │ interface      │     │                 │     │                 │
+       │      └────────────────┘     └─────────────────┘     └─────────────────┘
+       │
+       │           Uniswap Trading (After Funding)
+       └─────►┌────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+              │ User accesses  │     │ Interacts with  │     │ Benefits from   │
+              │ Uniswap        ├────►│ bonding curve   ├────►│ improved        │
+              │ pools          │     │ liquidity       │     │ liquidity       │
               └────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
@@ -210,37 +221,16 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 └─────────────┘     └────────────────┘     └─────────────────┘
 ```
 
-### Administrator Platform Management Flow
-```
-┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ Admin logs  │     │ Reviews        │     │ Monitors key    │
-│ into secure ├────►│ platform       ├────►│ metrics & user  │
-│ dashboard   │     │ performance    │     │ activity        │
-└─────────────┘     └────────────────┘     └────────┬────────┘
-                                                    │
-┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
-│ Changes     │     │ Manages        │     │ Adjust platform │
-│ deployed to │◄────┤ supported      │◄────┤ parameters      │
-│ platform    │     │ token list     │     │ & fees          │
-└─────────────┘     └────────────────┘     └─────────────────┘
-       │
-       │        Emergency Actions
-       │    ┌────────────────┐      ┌─────────────────┐
-       └───►│ Pause contracts│      │ Deploy contract │
-            │ if needed      ├─────►│ upgrades        │
-            └────────────────┘      └─────────────────┘
-```
-
 ## Getting Started
 
 ### Prerequisites
 - Node.js (v18+)
-- Yarn or npm
+- npm
 
 ### Installation
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/your-username/rollinad-dapp.git
 
 # Install dependencies
 npm install
@@ -268,7 +258,7 @@ npm run build
 ### API Integration
 - Dedicated API routes for interacting with 0x Protocol
 - Gas-less transaction support with specialized endpoints
-- Trade analytics tracking and processing
+- Uniswap integration for bonding curve liquidity
 
 ### Blockchain Integration
 - Wagmi library for React-Ethereum integration
@@ -305,12 +295,34 @@ contract/funding/
     └── SimpleAMM.sol - Automated Market Maker for trading
 ```
 
+## Bonding Curve & Uniswap Integration
+
+The platform now features a seamless integration with Uniswap after proposals reach their funding target:
+
+1. **Automatic Liquidity Pool Creation**:
+   - When a proposal reaches its funding target, in addition to enabling SimpleAMM trading, the system now establishes a Uniswap liquidity pool
+   - This creates a bonding curve mechanism that provides deeper liquidity for project tokens
+
+2. **Benefits for Token Holders**:
+   - Improved token liquidity via Uniswap's larger ecosystem
+   - Price discovery through market forces
+   - Ability to trade tokens across multiple DEXes
+
+3. **Technical Implementation**:
+   - Programmatic creation of Uniswap V3 pools with appropriate fee tiers
+   - Initial liquidity provisioning from project treasury
+   - Smart contract hooks that trigger after successful funding completion
+
+4. **Future Enhancements**:
+   - Customizable bonding curve parameters for project creators
+   - Liquidity mining incentives for early supporters
+   - Cross-chain liquidity bridges
+
 ## Tech Stack
 
 ### Frontend
 - React 18 with TypeScript
 - Vite for fast development and building
-- Next.js for API routes
 - Material UI for component library
 - React Hook Form for form management
 - React Router for navigation
@@ -322,6 +334,8 @@ contract/funding/
 - Ethers.js for blockchain interactions
 - RainbowKit for wallet connection UI
 - Privy for social login and wallet management
+- 0x Protocol for token swaps
+- Uniswap SDK for bonding curve implementation
 
 ### Backend / API
 - Next.js API routes
@@ -350,43 +364,10 @@ contract/funding/
 └──────┬─────────────────┬──────────────────────┬───────┘
        │                 │                      │        
 ┌──────▼──────┐  ┌───-───▼─────┐  ┌────────────-▼──────┐
-│  Staking    │  │  Funding    │  │  0x Protocol API   │
-│  Contracts  │  │  Contracts  │  │  (Swap Service)    │
+│  Staking    │  │  Funding    │  │  0x/Uniswap APIs   │
+│  Contracts  │  │  Contracts  │  │  (Liquidity)       │
 └─────────────┘  └─────────────┘  └────────────────────┘
 ```
 
-### Component Relationship Diagram
-```
-┌─────────────────────┐       ┌───────────────────┐
-│  WalletSyncContext  │◄──────┤  Custom Connect   │
-└────────┬────────────┘       │  Button           │
-         │                    └───────────────────┘
-         ▼
-┌────────────────────┐        ┌───────────────────┐
-│  Main Application  │─────►  │  Navigation       │
-└────────┬───────────┘        └───────────────────┘
-         │
-         ├────────────┬────────────┬─────────────┐
-         ▼            ▼            ▼             ▼
-┌────────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐
-│  Staking   │  │  Funding │  │  Swap   │  │ Analytics│
-│  Module    │  │  Module  │  │  Module │  │ Module   │
-└────────────┘  └──────────┘  └─────────┘  └──────────┘
-```
-
-### Data Flow Diagram
-```
-┌──────────────┐    ┌─────────────┐    ┌───────────────┐    ┌────────────┐
-│  User        │    │  Frontend   │    │  API Layer    │    │ Blockchain │
-│  Interface   │◄──►│  Components │◄──►│  (Next.js)    │◄──►│ (Contracts)│
-└──────────────┘    └─────────────┘    └───────────────┘    └────────────┘
-        │                                    ▲                   ▲
-        │                                    │                   │
-        │                                    │                   │
-        │               ┌─────────────────────┐                  │
-        └──────────────►│ 0x Protocol Service ├────────────────-─┘
-                        └─────────────────────┘
-```
-
 ## License
-All other files are covered by the MIT license, see [`LICENSE`](./LICENSE).
+All files are covered by the MIT license, see [`LICENSE`](./LICENSE).
