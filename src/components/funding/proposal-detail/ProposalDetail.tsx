@@ -243,7 +243,7 @@ export const ProposalDetail: React.FC = () => {
   // Handle contribution submission
   const handleContribute = () => {
     if (
-      !proposalId ||
+      proposalId === undefined ||
       !contributionAmount ||
       parseFloat(contributionAmount) <= 0
     )
@@ -254,25 +254,25 @@ export const ProposalDetail: React.FC = () => {
 
   // Handle contribution request
   const handleRequestToContribute = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     requestToContribute(proposalId);
   };
 
   // Handle withdrawal
   const handleWithdraw = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     withdrawContribution(proposalId);
   };
 
   // Handle fund release by creator
   const handleReleaseFunds = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     releaseFunds(proposalId);
   };
 
   // Handle proposal approval by admin
   const handleApproveProposal = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     approveProposal(proposalId);
   };
 

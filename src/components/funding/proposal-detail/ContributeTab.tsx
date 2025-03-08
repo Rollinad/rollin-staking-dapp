@@ -18,7 +18,7 @@ import {
 import { formatEther } from "viem";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PendingIcon from "@mui/icons-material/Pending";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   ProposalBasic,
@@ -142,7 +142,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         <Alert 
           severity='info' 
           sx={{ mb: 3 }}
-          icon={<TwitterIcon sx={{ color: '#1DA1F2' }} />}
+          icon={<XIcon sx={{ color: '#1DA1F2' }} />}
           action={
             <Button 
               color="info" 
@@ -153,7 +153,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
             </Button>
           }
         >
-          You need to connect your Twitter account to contribute to this proposal.
+          You need to connect your X account to contribute to this proposal.
         </Alert>
       )}
 
@@ -443,7 +443,7 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
         >
           {needsTwitter && (
             <Stack spacing={2} alignItems='center' sx={{ py: 3 }}>
-              <TwitterIcon sx={{ fontSize: 48, color: '#1DA1F2' }} />
+              <XIcon sx={{ fontSize: 48, color: '#1DA1F2' }} />
               <Typography variant='h6' sx={{ textAlign: "center" }}>
                 Twitter Connection Required
               </Typography>
@@ -455,11 +455,11 @@ export const ContributeTab: React.FC<ContributeTabProps> = ({
                   maxWidth: "80%",
                 }}
               >
-                To participate in DAO funding, please connect your Twitter account for verification purposes.
+                To participate in DAO funding, please connect your X account for verification purposes.
               </Typography>
               <Button
                 variant="contained"
-                startIcon={<TwitterIcon />}
+                startIcon={<XIcon />}
                 onClick={() => document.dispatchEvent(new Event('openAccountModal'))}
                 sx={{ 
                   bgcolor: '#1DA1F2', 

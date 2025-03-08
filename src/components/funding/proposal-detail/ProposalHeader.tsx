@@ -20,7 +20,7 @@ import {
   UserData,
 } from "../../../types/funding";
 import { usePrivy } from "@privy-io/react-auth";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import { useAccount } from "wagmi";
 
 interface ProposalHeaderProps {
@@ -173,8 +173,8 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
                     }}
                   />
                 ) : (
-                  <Avatar sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}>
-                    <TwitterIcon sx={{ fontSize: 30 }} />
+                  <Avatar sx={{ width: 30, height: 30, bgcolor: "#ffffff" }}>
+                    <XIcon sx={{ fontSize: '18px' }} />
                   </Avatar>
                 )}
                 <Typography variant='body1' sx={{ color: "white" }}>

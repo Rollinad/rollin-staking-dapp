@@ -16,24 +16,36 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
-import TwitterIcon from '@mui/icons-material/Twitter';
+import XIcon from '@mui/icons-material/X';
 import PersonIcon from '@mui/icons-material/Person';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useUserManagement } from '../../hooks/useFundingContract';
+import { useWalletSync } from '../../contexts/WalletSyncContext';
 
 export const UserRegistration = () => {
   const [becomeCreator, setBecomeCreator] = useState(false);
   const [twitterId, setTwitterId] = useState('');
   const [activeStep, setActiveStep] = useState(0);
   const navigate = useNavigate();
+
+  const { isTwitterLinkedToAnotherWallet, unlinkTwitter } = useWalletSync();
   
   // Get user's Privy and blockchain data
-  const { user, linkTwitter } = usePrivy();
+  const { user, linkTwitter, login, authenticated } = usePrivy();
   const { userData, userDataLoading, registerUser, isPending, isConfirming, isConfirmed, writeError, refetchUserData } = useUserManagement();
   
   // Check if user has Twitter linked
   const hasTwitterLinked = user?.linkedAccounts?.some(account => account.type === 'twitter_oauth');
+
+  const handleLinkTwitter = async () => {
+    if (!authenticated) {
+      login();
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    linkTwitter();
+  }
   
   // Get the Twitter ID from Privy if available
   const twitterAccount = user?.linkedAccounts?.find(account => account.type === 'twitter_oauth');
@@ -48,10 +60,14 @@ export const UserRegistration = () => {
 
   // Handle Twitter connection and move to next step
   useEffect(() => {
-    if (hasTwitterLinked && activeStep === 0) {
+    if (hasTwitterLinked && activeStep === 0 && !isTwitterLinkedToAnotherWallet) {
       setActiveStep(1);
+    } else {
+      setActiveStep(0);
+      unlinkTwitter();
     }
-  }, [hasTwitterLinked, activeStep]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasTwitterLinked, activeStep, isTwitterLinkedToAnotherWallet]);
 
   // Handle successful registration
   useEffect(() => {
@@ -81,7 +97,7 @@ export const UserRegistration = () => {
 
   // Handle registration submission
   const handleSubmit = () => {
-    if (!twitterId) return;
+    if (!twitterId || isTwitterLinkedToAnotherWallet) return;
     
     if (userData?.isRegistered && becomeCreator) {
       // If already registered and wants to become creator, redirect to BecomeCreator page
@@ -102,7 +118,7 @@ export const UserRegistration = () => {
   }
 
   // Steps definition
-  const steps = ['Connect Twitter Account', 'Choose Role', 'Complete Registration'];
+  const steps = ['Connect X Account', 'Choose Role', 'Complete Registration'];
 
   return (
     <Paper 
@@ -171,43 +187,44 @@ export const UserRegistration = () => {
       <Box sx={{ mt: 2 }}>
         {activeStep === 0 && (
           <Box sx={{ textAlign: 'center', py: 2 }}>
-            <Avatar sx={{ width: 80, height: 80, bgcolor: '#1DA1F2', mx: 'auto', mb: 3 }}>
-              <TwitterIcon sx={{ fontSize: 40 }} />
+            <Avatar sx={{ width: 80, height: 80, bgcolor: 'rgba(255, 255, 255, 0.1)', color: "#ffffff", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)", mx: 'auto', mb: 3 }}>
+              <XIcon sx={{ fontSize: 40 }} />
             </Avatar>
             
             <Typography variant="h5" gutterBottom>
-              Connect Your Twitter Account
+              Connect Your X Account
             </Typography>
             
             <Typography variant="body1" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.8)' }}>
-              To participate in our DAO funding platform, you need to link your Twitter account for verification purposes.
+              To participate in our DAO funding platform, you need to link your X account for verification purposes.
             </Typography>
             
-            {hasTwitterLinked ? (
+            {hasTwitterLinked && !isTwitterLinkedToAnotherWallet ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 3 }}>
                 <CheckCircleIcon sx={{ color: '#4caf50', mr: 1 }} />
                 <Typography>
-                  Twitter account <strong>@{twitterUsername}</strong> connected!
+                  X account <strong>@{twitterUsername}</strong> connected!
                 </Typography>
               </Box>
             ) : (
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<TwitterIcon />}
-                onClick={linkTwitter}
+                startIcon={<XIcon />}
+                onClick={handleLinkTwitter}
                 sx={{ 
-                  bgcolor: '#1DA1F2', 
-                  '&:hover': { bgcolor: '#0c8bd9' },
+                  bgcolor: 'rgba(255, 255, 255, 0.1)', 
+                  '&:hover': { bgcolor: '#ffffff', color: '#000000' },
                   py: 1.5,
-                  px: 3
+                  px: 3,
+                  backdropFilter: "blur(10px)",
                 }}
               >
-                Connect Twitter Account
+                Connect X Account
               </Button>
             )}
             
-            {hasTwitterLinked && (
+            {hasTwitterLinked && !isTwitterLinkedToAnotherWallet && (
               <Button
                 variant="contained"
                 endIcon={<ArrowForwardIcon />}
@@ -281,7 +298,7 @@ export const UserRegistration = () => {
                 >
                   <Box sx={{ textAlign: 'center' }}>
                     <Avatar sx={{ width: 60, height: 60, bgcolor: 'rgba(156, 39, 176, 0.2)', mx: 'auto', mb: 2 }}>
-                      <TwitterIcon sx={{ fontSize: 30, color: '#9c27b0' }} />
+                      <XIcon sx={{ fontSize: 30, color: '#9c27b0' }} />
                     </Avatar>
                     <Typography variant="h6" gutterBottom>
                       Creator
@@ -317,9 +334,9 @@ export const UserRegistration = () => {
             
             <Stack spacing={3} sx={{ maxWidth: 500, mx: 'auto', mb: 4 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TwitterIcon sx={{ color: '#1DA1F2', mr: 2 }} />
+                <XIcon sx={{ color: '#1DA1F2', mr: 2 }} />
                 <Box>
-                  <Typography variant="subtitle1">Twitter Account</Typography>
+                  <Typography variant="subtitle1">X Account</Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     @{twitterUsername}
                   </Typography>

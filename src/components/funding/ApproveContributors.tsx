@@ -114,7 +114,7 @@ export const ApproveContributors: React.FC = () => {
 
   // Handle approving a contributor
   const handleApproveContributor = async (contributorAddress: string) => {
-    if (!proposalId || !contributionLimit || parseFloat(contributionLimit) <= 0) {
+    if (proposalId === undefined || !contributionLimit || parseFloat(contributionLimit) <= 0) {
       return;
     }
 

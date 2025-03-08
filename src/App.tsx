@@ -21,7 +21,6 @@ import { BecomeCreator } from "./components/BecomeCreator";
 import { AdminProposalReview } from "./components/funding/AdminProposalReview";
 import { ApproveContributors } from "./components/funding/ApproveContributors";
 import { useUserManagement } from "./hooks/useFundingContract";
-import { useContractOwner } from "./hooks/useContractOwner";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -50,7 +49,6 @@ export const App = () => {
   
   // Get user data from contract
   const { userData } = useUserManagement();
-  const { isOwner } = useContractOwner();
   const isRegistered = userData?.isRegistered || false;
 
   useEffect(() => {

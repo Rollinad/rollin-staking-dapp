@@ -268,9 +268,9 @@ export function useContributionManagement() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getContributionInfo",
-      args: proposalId && address ? [proposalId, address] : undefined,
+      args: proposalId !== undefined && address ? [BigInt(proposalId), address] : undefined,
       query: {
-        enabled: !!proposalId && !!address,
+        enabled: proposalId !== undefined && address !== undefined,
       },
     });
 

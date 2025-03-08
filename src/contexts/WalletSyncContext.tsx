@@ -30,7 +30,7 @@ const WalletSyncContext = createContext<WalletSyncContextType>({
 /**
  * This provider component synchronizes wallet states between RainbowKit/wagmi and Privy
  * When a wallet is disconnected or switched in RainbowKit, it will call Privy's logout
- * It also tracks which wallet has a Twitter account linked to it
+ * It also tracks which wallet has a X account linked to it
  */
 export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -47,7 +47,7 @@ export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
   const prevConnectedRef = useRef(false);
   const prevAddressRef = useRef<string | undefined>(undefined);
 
-  // Check if the current address has a Twitter account linked
+  // Check if the current address has a X account linked
   const hasTwitterLinked = user?.linkedAccounts?.some(
     (account) => account.type === "twitter_oauth"
   );
@@ -67,9 +67,9 @@ export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
       if (linkedWalletAddress && address && linkedWalletAddress.toLowerCase() !== address.toLowerCase()) {
         console.warn("Twitter linked to different wallet than the one connected in RainbowKit");
         setWalletMismatchError(
-          `Your Twitter account is linked to wallet ${linkedWalletAddress.slice(0, 6)}...${linkedWalletAddress.slice(-4)}, ` +
+          `Your X account is linked to wallet ${linkedWalletAddress.slice(0, 6)}...${linkedWalletAddress.slice(-4)}, ` +
           `but you are currently connected with ${address.slice(0, 6)}...${address.slice(-4)}. ` +
-          `Please connect with the correct wallet or unlink your Twitter account.`
+          `Please connect with the correct wallet or unlink your X account.`
         );
       } else {
         setWalletMismatchError(null);
@@ -152,7 +152,7 @@ export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
   // Function to handle unlinking Twitter from wallet
   const handleUnlinkTwitter = async () => {
     try {
-      console.log("Unlinking Twitter account");
+      console.log("Unlinking X account");
       // Find the Twitter account to unlink
       const twitterAccount = user?.linkedAccounts?.find(
         (account) => account.type === "twitter_oauth"
@@ -162,10 +162,10 @@ export const WalletSyncProvider: React.FC<{ children: React.ReactNode }> = ({
         await unlinkTwitter("twitter_oauth");
         setWalletMismatchError(null);
       } else {
-        console.log("No Twitter account found to unlink");
+        console.log("No X account found to unlink");
       }
     } catch (error) {
-      console.error("Error unlinking Twitter account:", error);
+      console.error("Error unlinking X account:", error);
     }
   };
 
