@@ -1,8 +1,8 @@
-# Rollin Staking DApp
+# Rollinad DApp
 
 A comprehensive DeFi platform for staking cryptocurrency tokens, swapping between tokens, and participating in DAO funding opportunities.
 
-![Rollin DApp](/public/icon.png)
+![Rollinad DApp](/public/icon.png)
 
 ## Features
 

@@ -93,8 +93,7 @@ export const App = () => {
                 <Typography
                   variant='h4'
                   sx={{
-                    color: "#ffffff",
-                    fontWeight: "bold",
+                    color: "rgba(251, 250, 249, 1)",
                     textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
                     fontSize: {
                       xs: "1.5rem", // 24px for mobile
@@ -103,7 +102,7 @@ export const App = () => {
                     },
                   }}
                 >
-                  Rollin Staking
+                  Rollinad
                 </Typography>
               </Box>
               <CustomConnectButton />
