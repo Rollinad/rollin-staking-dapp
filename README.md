@@ -8,10 +8,10 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
 
 <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 20px;">
   <a href="https://privy.io/" target="_blank">
-    <img src="https://assets-global.website-files.com/6364e65656ab107e465325d2/64797a9c1ce3d0fa07a0e819_blue-logo.svg" alt="Privy" height="50" />
+    <img src="https://pbs.twimg.com/profile_images/1841145134739832833/jOnqiGU0_400x400.jpg" alt="Privy" height="50" style="border-radius: 8px;" />
   </a>
   <a href="https://0x.org/" target="_blank">
-    <img src="https://0x.org/images/0x_logo_dark.svg" alt="0x Protocol" height="50" />
+    <img src="https://0x.org/docs/img/0x-logo.png" alt="0x Protocol" height="50" style="border-radius: 8px;" />
   </a>
 </div>
 
