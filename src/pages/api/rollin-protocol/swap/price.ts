@@ -36,7 +36,9 @@ export default async function handler(
       tradeSurplusRecipient: import.meta.env.VITE_0X_SURPLUS_RECIPIENT,
     });
 
-    console.log("start here")
+    if (data.slippageBps) {
+      params.append("slippageBps", data.slippageBps.toString());
+    }
 
     const response = await fetch(
       `https://api.0x.org/swap/permit2/price?${params}`,

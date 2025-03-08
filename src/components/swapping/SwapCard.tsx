@@ -29,6 +29,7 @@ import { UnverifiedTokenWarning } from "./UnverifiedTokenWarning";
 import { TokenButton } from "./TokenButton";
 import { cardStyle, tokenButtonStyle } from "./styles";
 import { use0x } from "../../hooks/use0x";
+import { SlippageConfig } from "./SlippageConfig";
 
 // Define status type for the StatusChip
 type TradeStatus = "submitted" | "confirmed" | "failed" | string;
@@ -109,6 +110,10 @@ export const SwapCard = () => {
   const [error, setError] = useState("");
   const [isSwapping, setIsSwapping] = useState(false);
   const [shouldSwapBack, setShouldSwapBack] = useState(false);
+
+  // Slippage settings
+  const [slippageBps, setSlippageBps] = useState<number>(100); // Default 1% (100 basis points)
+  const [isAutoSlippage, setIsAutoSlippage] = useState<boolean>(true);
 
   // Balance cache to preserve token balances during swaps
   const balanceCacheRef = useRef<TokenBalanceCache>({});
@@ -471,7 +476,8 @@ export const SwapCard = () => {
           sellToken,
           buyToken,
           sellAmount,
-          useGasless
+          useGasless,
+          slippageBps
         );
         if (quote.buyAmount) {
           setBuyAmount(formatUnits(BigInt(quote.buyAmount), buyToken.decimal));
@@ -497,6 +503,7 @@ export const SwapCard = () => {
     getSwapQuote,
     buyToken?.decimal,
     useGasless,
+    slippageBps,
   ]);
 
   // Handle swap execution
@@ -515,7 +522,8 @@ export const SwapCard = () => {
         sellToken,
         buyToken,
         sellAmount,
-        useGasless
+        useGasless,
+        slippageBps
       );
 
       if (useGasless && isGaslessSwapResult(result)) {
@@ -602,13 +610,24 @@ export const SwapCard = () => {
         {/* Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
           <Typography
-            variant='h5'
+            variant="h5"
             sx={{
               color: "#fff",
               fontWeight: "bold",
             }}
-          ></Typography>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          >
+            {/* Title if needed */}
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* Slippage Configuration */}
+            <SlippageConfig
+              slippageBps={slippageBps}
+              onSlippageChange={setSlippageBps}
+              isAutoSlippage={isAutoSlippage}
+              onAutoSlippageChange={setIsAutoSlippage}
+            />
+            
+            {/* Gasless Toggle */}
             <Tooltip
               title={
                 isGaslessCompatible
@@ -636,7 +655,7 @@ export const SwapCard = () => {
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <LocalGasStation sx={{ mr: 0.5, fontSize: "1rem" }} />
-                    <Typography variant='body2'>Gasless</Typography>
+                    <Typography variant="body2">Gasless</Typography>
                   </Box>
                 }
                 sx={{ mr: 1, color: "white" }}
@@ -696,7 +715,7 @@ export const SwapCard = () => {
               fullWidth
               value={sellAmount}
               onChange={handleSellAmountChange}
-              placeholder='0'
+              placeholder="0"
               error={isAmountExceedingBalance}
               disabled={
                 (!!tradeStatus && tradeStatus === "submitted") || isSwapping
@@ -782,7 +801,7 @@ export const SwapCard = () => {
             backgroundColor: "rgba(255, 255, 255, 0.05)",
             borderRadius: 2,
             p: 2,
-            mb: 3,
+            mb: 1,
           }}
         >
           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
@@ -803,7 +822,7 @@ export const SwapCard = () => {
             <TextField
               fullWidth
               value={buyAmount}
-              placeholder='0'
+              placeholder="0"
               disabled
               sx={{
                 "& .MuiInputBase-root": {
@@ -829,6 +848,22 @@ export const SwapCard = () => {
             />
           </Box>
           <UnverifiedTokenWarning token={buyToken} />
+          
+          {/* Display current slippage setting */}
+          <Typography 
+            sx={{ 
+              fontSize: "0.75rem", 
+              color: "rgba(255, 255, 255, 0.6)",
+              mt: 1,
+              textAlign: "right",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end"
+            }}
+          >
+            <InfoIcon sx={{ fontSize: "0.875rem", mr: 0.5, opacity: 0.7 }} />
+            Slippage Tolerance: {isAutoSlippage ? "Auto" : `${slippageBps / 100}%`}
+          </Typography>
         </Paper>
 
         {/* Gasless Transaction Status */}
@@ -856,7 +891,7 @@ export const SwapCard = () => {
         {/* Error Message */}
         {error && (
           <Typography
-            color='error'
+            color="error"
             sx={{
               mb: 2,
               color: "#ff6b6b",
@@ -872,8 +907,8 @@ export const SwapCard = () => {
         {/* Swap Button */}
         <Button
           fullWidth
-          variant='contained'
-          size='large'
+          variant="contained"
+          size="large"
           disabled={
             !isConnected ||
             isLoading ||

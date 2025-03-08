@@ -98,7 +98,8 @@ export const use0x = () => {
     sellToken: Token,
     buyToken: Token,
     sellAmount: string,
-    useGasless: boolean = false
+    useGasless: boolean = false,
+    slippageBps: number = 100 // Default 1% slippage
   ): Promise<SwapQuote> => {
     try {
       setIsLoading(true);
@@ -124,6 +125,7 @@ export const use0x = () => {
           sellAmount: sellAmountBase,
           takerAddress: address!,
           chainId,
+          slippageBps: slippageBps,
         }),
       });
 
@@ -159,7 +161,8 @@ export const use0x = () => {
     sellToken: Token,
     buyToken: Token,
     sellAmount: string,
-    useGasless: boolean = false
+    useGasless: boolean = false,
+    slippageBps: number = 100 // Default 1% slippage
   ) => {
     if (!isConnected || !walletClient || !address || !publicClient) {
       throw new Error('Wallet not connected or client not initialized');
@@ -170,15 +173,15 @@ export const use0x = () => {
       setError(null);
       setIsGasless(useGasless);
 
-      // 1. Get quote (includes allowance check)
-      const quote = await getSwapQuote(sellToken, buyToken, sellAmount, useGasless);
+      // 1. Get quote (includes allowance check) with slippage parameter
+      const quote = await getSwapQuote(sellToken, buyToken, sellAmount, useGasless, slippageBps);
 
       if (useGasless) {
         // Gasless swap flow
         return await executeGaslessSwap(quote, sellToken);
       } else {
         // Regular swap flow
-        return await executeRegularSwap(quote, sellToken);
+        return await executeRegularSwap(quote, sellToken, buyToken, sellAmount);
       }
     } catch (error) {
       const errorMessage = (error as Error).message || 'Failed to execute swap';
@@ -198,7 +201,9 @@ export const use0x = () => {
 
   const executeRegularSwap = useCallback(async (
     quote: SwapQuote,
-    sellToken: Token
+    sellToken: Token,
+    buyToken: Token,
+    sellAmount: string
   ) => {
     // Handle allowance if needed for non-native tokens
     const isNativeToken = sellToken.address.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -209,8 +214,10 @@ export const use0x = () => {
         sellToken.address as Address
       );
 
-      // Get fresh quote after approval
-      const updatedQuote = await getSwapQuote(sellToken, buyToken, sellAmount, false);
+      // Get fresh quote after approval using the same slippage
+      // Extract slippageBps from the original quote if available
+      const slippageBps = quote.slippageBps || 100;
+      const updatedQuote = await getSwapQuote(sellToken, buyToken, sellAmount, false, slippageBps);
       Object.assign(quote, updatedQuote);
     }
 
@@ -264,7 +271,7 @@ export const use0x = () => {
     
     return receipt;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, publicClient, walletClient, handleTokenApproval]);
+  }, [address, publicClient, walletClient, handleTokenApproval, getSwapQuote]);
 
   const executeGaslessSwap = useCallback(async (
     quote: SwapQuote,
@@ -339,6 +346,11 @@ export const use0x = () => {
 
     if (approvalDataToSubmit) {
       requestBody.approval = approvalDataToSubmit;
+    }
+
+    // Include slippage in the request if available in the quote
+    if (quote.slippageBps) {
+      requestBody.slippageBps = quote.slippageBps;
     }
 
     // Submit to our API endpoint which will forward to 0x

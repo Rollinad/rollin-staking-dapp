@@ -19,6 +19,7 @@ type SwapRequestBody = {
   sellAmount: string;
   takerAddress: string;
   chainId: string;
+  slippageBps?: number;
 };
 
 function setCorsHeaders(res: NextApiResponse) {
@@ -65,6 +66,10 @@ export default async function handler(
       chainId: data.chainId.toString(),
       tradeSurplusRecipient: process.env.VITE_0X_SURPLUS_RECIPIENT ?? "",
     });
+
+    if (data.slippageBps) {
+      params.append("slippageBps", data.slippageBps.toString());
+    }
 
     const response = await fetch(
       `https://api.0x.org/swap/permit2/price?${params}`,
