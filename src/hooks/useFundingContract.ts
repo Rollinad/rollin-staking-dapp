@@ -268,9 +268,9 @@ export function useContributionManagement() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getContributionInfo",
-      args: proposalId && address ? [proposalId, address] : undefined,
+      args: proposalId !== undefined && address ? [BigInt(proposalId), address] : undefined,
       query: {
-        enabled: !!proposalId && !!address,
+        enabled: proposalId !== undefined && address !== undefined,
       },
     });
 
@@ -579,10 +579,11 @@ export function useTokenBalances() {
       address: DAO_VIEW_CONTRACT_ADDRESS,
       abi: DAOViewABI,
       functionName: "getTokenBalance",
-      args: proposalId ? [proposalId] : undefined,
+      args: proposalId !== undefined ? [proposalId] : undefined,
       query: {
-        enabled: !!proposalId,
+        enabled: proposalId !== undefined,
       },
+      account: address as Address
     });
   };
 

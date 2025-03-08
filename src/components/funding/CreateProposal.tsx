@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   useProposalManagement,
@@ -52,7 +52,7 @@ export const CreateProposal = () => {
       if (!userData.isCreator) {
         navigate("/funding/register");
       }
-      // If user has no Twitter account linked, redirect to account page
+      // If user has no X account linked, redirect to account page
       else if (!hasTwitterLinked) {
         // Open account modal to prompt Twitter connection
         document.dispatchEvent(new Event("openAccountModal"));
@@ -131,7 +131,7 @@ export const CreateProposal = () => {
     );
   }
 
-  // Check if Twitter account is linked
+  // Check if X account is linked
   if (!hasTwitterLinked && userData?.isCreator) {
     return (
       <Paper
@@ -148,31 +148,32 @@ export const CreateProposal = () => {
         }}
       >
         <Box sx={{ textAlign: "center", py: 4 }}>
-          <TwitterIcon sx={{ fontSize: 64, color: "#1DA1F2", mb: 2 }} />
+          <XIcon sx={{ fontSize: 64, color: "#ffffff", mb: 2 }} />
           <Typography variant='h5' gutterBottom>
-            Twitter Account Required
+            X Account Required
           </Typography>
           <Typography
             variant='body1'
             sx={{ mb: 3, color: "rgba(255, 255, 255, 0.8)" }}
           >
-            To create funding proposals, you need to link your Twitter account
+            To create funding proposals, you need to link your X account
             for verification.
           </Typography>
           <Button
             variant='contained'
-            startIcon={<TwitterIcon />}
+            startIcon={<XIcon />}
             onClick={() =>
               document.dispatchEvent(new Event("openAccountModal"))
             }
-            sx={{
-              bgcolor: "#1DA1F2",
-              "&:hover": { bgcolor: "#0c8bd9" },
+            sx={{ 
+              bgcolor: 'rgba(255, 255, 255, 0.1)', 
+              '&:hover': { bgcolor: '#ffffff', color: '#000000' },
               py: 1.5,
               px: 3,
+              backdropFilter: "blur(10px)",
             }}
           >
-            Connect Twitter Account
+            Connect X Account
           </Button>
         </Box>
       </Paper>

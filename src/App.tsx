@@ -19,8 +19,8 @@ import { CreateProposal } from "./components/funding/CreateProposal";
 import UserRegistration from "./components/funding/UserRegistration";
 import { BecomeCreator } from "./components/BecomeCreator";
 import { AdminProposalReview } from "./components/funding/AdminProposalReview";
+import { ApproveContributors } from "./components/funding/ApproveContributors";
 import { useUserManagement } from "./hooks/useFundingContract";
-import { useContractOwner } from "./hooks/useContractOwner";
 
 const rollinStakingIcon = "/icon.png";
 
@@ -49,7 +49,6 @@ export const App = () => {
   
   // Get user data from contract
   const { userData } = useUserManagement();
-  const { isOwner } = useContractOwner();
   const isRegistered = userData?.isRegistered || false;
 
   useEffect(() => {
@@ -94,8 +93,7 @@ export const App = () => {
                 <Typography
                   variant='h4'
                   sx={{
-                    color: "#ffffff",
-                    fontWeight: "bold",
+                    color: "rgba(251, 250, 249, 1)",
                     textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
                     fontSize: {
                       xs: "1.5rem", // 24px for mobile
@@ -104,7 +102,7 @@ export const App = () => {
                     },
                   }}
                 >
-                  Rollin Staking
+                  Rollinad
                 </Typography>
               </Box>
               <CustomConnectButton />
@@ -139,6 +137,7 @@ export const App = () => {
                       <Route path='contributions' element={<MyContributions />} />
                       <Route path="register" element={<UserRegistration />} />
                       <Route path="become-creator" element={<BecomeCreator />} />
+                      <Route path="manage-contributors/:id" element={<ApproveContributors />} />
                     </Route>
 
                     {/* Admin Routes - Only accessible to contract owner */}

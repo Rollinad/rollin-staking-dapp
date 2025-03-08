@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { formatEther } from "viem";
 import { ProposalBasic, ProposalToken } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface OverviewTabProps {
   proposalBasic: ProposalBasic;
@@ -29,6 +30,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   tokenPrice,
   tokenBalance,
 }) => {
+  const { chain } = useAccount();
+
   return (
     <Grid container spacing={3} sx={{ padding: "24px" }}>
       <Grid item xs={12} md={8}>
@@ -43,7 +46,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           >
             This is a funding proposal for the {proposalToken.tokenName}{" "}
             project. The creator is seeking{" "}
-            {formatEther(proposalBasic.targetAmount)} ETH in funding.
+            {formatEther(proposalBasic.targetAmount)} {chain?.nativeCurrency.symbol} in funding.
           </Typography>
 
           <Typography
@@ -148,7 +151,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     variant='body2'
                     sx={{ color: "white", fontWeight: "bold" }}
                   >
-                    {formatEther(tokenPrice)} ETH
+                    {formatEther(tokenPrice)} {chain?.nativeCurrency.symbol}
                   </Typography>
                 </Box>
               )}

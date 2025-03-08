@@ -5,7 +5,7 @@ import { TokenData } from "../types/staking";
 
 // Single token data hook
 export const useTokenData = (tokenAddress: Address) => {
-  const { address: userAddress } = useAccount();
+  const { address: userAddress, chain } = useAccount();
   const [tokenData, setTokenData] = useState<TokenData>({});
 
   const { data: balance } = useBalance({
@@ -35,8 +35,8 @@ export const useTokenData = (tokenAddress: Address) => {
     if (tokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
       setTokenData({
         balance: balance?.value,
-        symbol: 'ETH',
-        name: 'Ethereum',
+        symbol: chain?.nativeCurrency.symbol,
+        name: chain?.nativeCurrency.name,
         decimals: 18,
       });
     } else {
@@ -47,7 +47,7 @@ export const useTokenData = (tokenAddress: Address) => {
         decimals: decimals as number,
       });
     }
-  }, [balance, symbol, name, decimals, tokenAddress]);
+  }, [balance, symbol, name, decimals, tokenAddress, chain]);
 
   return tokenData;
 };

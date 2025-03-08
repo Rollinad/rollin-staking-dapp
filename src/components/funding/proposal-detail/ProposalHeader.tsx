@@ -20,7 +20,8 @@ import {
   UserData,
 } from "../../../types/funding";
 import { usePrivy } from "@privy-io/react-auth";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
+import { useAccount } from "wagmi";
 
 interface ProposalHeaderProps {
   proposalBasic: ProposalBasic;
@@ -81,6 +82,7 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
   setTabValue,
 }) => {
   const { user } = usePrivy();
+  const { chain } = useAccount();
 
   const twitterAccount = user?.linkedAccounts?.find(
     (account) => account.type === "twitter_oauth"
@@ -171,8 +173,8 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
                     }}
                   />
                 ) : (
-                  <Avatar sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}>
-                    <TwitterIcon sx={{ fontSize: 30 }} />
+                  <Avatar sx={{ width: 30, height: 30, bgcolor: "#ffffff" }}>
+                    <XIcon sx={{ fontSize: '18px' }} />
                   </Avatar>
                 )}
                 <Typography variant='body1' sx={{ color: "white" }}>
@@ -210,7 +212,7 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
               align='center'
               sx={{ color: "white", mb: 1 }}
             >
-              {formatEther(proposalBasic.currentAmount)} ETH
+              {formatEther(proposalBasic.currentAmount)} {chain?.nativeCurrency.symbol}
             </Typography>
 
             <Typography
@@ -218,7 +220,7 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
               align='center'
               sx={{ color: "rgba(255, 255, 255, 0.7)", mb: 2 }}
             >
-              of {formatEther(proposalBasic.targetAmount)} ETH target
+              of {formatEther(proposalBasic.targetAmount)} {chain?.nativeCurrency.symbol} target
             </Typography>
 
             <Box sx={{ mb: 1 }}>

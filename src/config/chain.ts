@@ -39,7 +39,7 @@ export const supportedChains = [
 ]
 
 export const config = getDefaultConfig({
-  appName: 'Rollin Staking',
+  appName: 'Rollinad',
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
   chains: [
     monadTestnet,

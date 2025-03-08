@@ -25,6 +25,7 @@ import { formatEther } from 'viem';
 import { useProposalQueries, useUserManagement } from '../../hooks/useFundingContract';
 import { stringToColor } from '../../utils/stringToColor';
 import { ProposalView } from '../../types/funding';
+import { useAccount } from 'wagmi';
 
 export const ProposalList = () => {
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'completed'
@@ -32,20 +33,51 @@ export const ProposalList = () => {
   const [showApprovedOnly, setShowApprovedOnly] = useState(true);
   const itemsPerPage = 6;
   const navigate = useNavigate();
+  const { chain } = useAccount();
   
   const { userData } = useUserManagement();
   
+  // Get total proposal count
+  const { data: totalProposalsData } = useProposalQueries().useTotalProposals();
+  const totalProposalsCount = totalProposalsData ? totalProposalsData as bigint : 100n;
+  
+  // Get all proposals
+  const { data: allProposalsData, isLoading: isAllProposalsLoading } = useProposalQueries().useProposalsPaginated(
+    0n, // Start from the first proposal
+    totalProposalsCount // Get all proposals up to the total count
+  );
+  
+  // Safely extract all proposals with their proposalIds
+  const extractAllProposals = (): ProposalView[] => {
+    if (!allProposalsData) return [];
+    
+    // Contract returns tuple [ProposalView[], bigint]
+    const proposalsData = allProposalsData as any;
+    if (Array.isArray(proposalsData) && proposalsData.length > 0 && Array.isArray(proposalsData[0])) {
+      return proposalsData[0].map((proposal, index) => ({
+        ...proposal,
+        proposalId: index // The index in the array corresponds to the proposalId
+      }));
+    }
+    return [];
+  };
+
   // Get proposals with filters
   const { data: filteredProposals, isLoading: isFilteredLoading } = useProposalQueries().useFilteredProposals(
     filter === 'active' || filter === 'all', // onlyActive
     showApprovedOnly // onlyApproved
   );
 
-  // Calculate the total number of pages
-  const totalPages = filteredProposals ? Math.ceil((filteredProposals as ProposalView[]).length / itemsPerPage) : 1;
+  // Get all proposals with their IDs (similar to AdminProposalReview)
+  const allProposals = extractAllProposals();
   
-  // Get the current page's proposals
-  const currentProposals = filteredProposals 
+  // Calculate the total number of pages based on filtered proposals
+  const totalPages = filteredProposals 
+    ? Math.ceil((filteredProposals as ProposalView[]).length / itemsPerPage) 
+    : 1;
+  
+  // Get the current page's proposals from filtered data
+  const paginatedProposals = filteredProposals 
     ? (filteredProposals as ProposalView[]).slice((page - 1) * itemsPerPage, page * itemsPerPage)
     : [];
 
@@ -167,8 +199,8 @@ export const ProposalList = () => {
         </Box>
       </Paper>
 
-      {/* Show loading state or content depending on isFilteredLoading */}
-      {isFilteredLoading ? (
+      {/* Show loading state or content depending on loading state */}
+      {isFilteredLoading || isAllProposalsLoading ? (
         <Paper 
           elevation={3}
           sx={{ 
@@ -189,7 +221,7 @@ export const ProposalList = () => {
             Loading proposals...
           </Typography>
         </Paper>
-      ) : currentProposals.length === 0 ? (
+      ) : paginatedProposals.length === 0 ? (
         <Paper 
           elevation={3}
           sx={{ 
@@ -213,10 +245,18 @@ export const ProposalList = () => {
       ) : (
         <>
           <Grid container spacing={3}>
-            {currentProposals.map((proposal, index) => {
+            {paginatedProposals.map((proposal, index) => {
               const percentComplete = proposal.targetAmount > 0n 
                 ? Number((proposal.currentAmount * 100n) / proposal.targetAmount)
                 : 0;
+              
+              // Find matching proposal from allProposals to get the proposalId
+              const matchingProposal = allProposals.find(p => 
+                p.creator === proposal.creator && 
+                p.tokenName === proposal.tokenName && 
+                p.tokenSymbol === proposal.tokenSymbol
+              );
+              const proposalId = matchingProposal ? (matchingProposal as any).proposalId : index;
               
               return (
                 <Grid item xs={12} sm={6} md={4} key={index}>
@@ -254,6 +294,12 @@ export const ProposalList = () => {
                         {proposal.tokenName}
                       </Typography>
                       
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" color="rgba(255, 255, 255, 0.6)">
+                          ID: {proposalId}
+                        </Typography>
+                      </Box>
+                      
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                         <Avatar 
                           sx={{ 
@@ -273,11 +319,11 @@ export const ProposalList = () => {
                       <Divider sx={{ my: 1.5, bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
                       
                       <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
-                        Target: {formatEther(proposal.targetAmount)} ETH
+                        Target: {formatEther(proposal.targetAmount)} {chain?.nativeCurrency.symbol}
                       </Typography>
                       
                       <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255, 255, 255, 0.8)' }}>
-                        Raised: {formatEther(proposal.currentAmount)} ETH
+                        Raised: {formatEther(proposal.currentAmount)} {chain?.nativeCurrency.symbol}
                       </Typography>
                       
                       <Box sx={{ mt: 2 }}>
@@ -296,7 +342,7 @@ export const ProposalList = () => {
                       <Button 
                         variant="contained" 
                         fullWidth
-                        onClick={() => navigate(`/funding/detail/${index}`)}
+                        onClick={() => navigate(`/funding/detail/${proposalId}`)}
                         sx={{ borderRadius: 2 }}
                       >
                         View Details

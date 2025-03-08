@@ -99,7 +99,8 @@ contract ContributionManager is DAOErrors {
 
         uint256 currentContribution = daoStorage.getContribution(proposalId, contributor);
         uint256 newContribution = currentContribution + amount;
-        uint256 tokenAllocation = (amount * token.contributionPrice) / PRICE_PRECISION;
+
+        uint tokenAllocation = DAOLib.calculateTokenAllocation(amount, basic.targetAmount, token.allocationSupply);
 
         daoStorage.setContribution(proposalId, contributor, newContribution);
         daoStorage.setTokenAllocation(proposalId, contributor, tokenAllocation);

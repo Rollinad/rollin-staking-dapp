@@ -32,6 +32,7 @@ import {
   ContributorCounts,
   ContributorInfo,
 } from "../../../types/funding";
+import { useAccount } from "wagmi";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -116,6 +117,7 @@ export const ProposalDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const proposalId = id ? BigInt(id) : undefined;
   const navigate = useNavigate();
+  const { address } = useAccount();
 
   // Local state
   const [tabValue, setTabValue] = useState<number>(0);
@@ -241,7 +243,7 @@ export const ProposalDetail: React.FC = () => {
   // Handle contribution submission
   const handleContribute = () => {
     if (
-      !proposalId ||
+      proposalId === undefined ||
       !contributionAmount ||
       parseFloat(contributionAmount) <= 0
     )
@@ -252,40 +254,55 @@ export const ProposalDetail: React.FC = () => {
 
   // Handle contribution request
   const handleRequestToContribute = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     requestToContribute(proposalId);
   };
 
   // Handle withdrawal
   const handleWithdraw = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     withdrawContribution(proposalId);
   };
 
   // Handle fund release by creator
   const handleReleaseFunds = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     releaseFunds(proposalId);
   };
 
   // Handle proposal approval by admin
   const handleApproveProposal = () => {
-    if (!proposalId) return;
+    if (proposalId === undefined) return;
     approveProposal(proposalId);
   };
 
   // Handle token swap
   const handleSwap = () => {
-    if (!proposalId || !swapAmount || parseFloat(swapAmount) <= 0) return;
-
-    if (swapType === "buy") {
-      swapETHForTokens(proposalId, swapAmount);
-    } else {
-      swapTokensForETH(proposalId, swapAmount);
+    if (proposalId === undefined || !swapAmount || parseFloat(swapAmount) <= 0) {
+      console.log("Swap validation failed:", { 
+        hasProposalId: !!proposalId, 
+        hasSwapAmount: !!swapAmount, 
+        isAmountPositive: swapAmount ? parseFloat(swapAmount) > 0 : false 
+      });
+      return;
     }
 
-    setSwapAmount("");
-    setIsSwapDialogOpen(false);
+    try {
+      console.log("Executing swap...");
+      if (swapType === "buy") {
+        console.log("Buying tokens with ETH:", { proposalId: proposalId.toString(), amount: swapAmount });
+        swapETHForTokens(proposalId, swapAmount);
+      } else {
+        console.log("Selling tokens for ETH:", { proposalId: proposalId.toString(), amount: swapAmount });
+        swapTokensForETH(proposalId, swapAmount);
+      }
+      
+      console.log("Swap function executed");
+      setSwapAmount("");
+      setIsSwapDialogOpen(false);
+    } catch (error) {
+      console.error("Error executing swap:", error);
+    }
   };
 
   // Open swap dialog
@@ -378,6 +395,12 @@ export const ProposalDetail: React.FC = () => {
     );
   }
 
+  let isCreatorValue = false;
+  if (proposalBasicData) {
+    const basicData = proposalBasicData as ProposalBasic;
+    isCreatorValue = basicData.creator.toLowerCase() === address?.toLowerCase();
+  }
+
   // If critical data is loaded, proceed with rendering the real UI
   if (!isCriticalDataLoading) {
     // Type assertions for clarity
@@ -398,9 +421,8 @@ export const ProposalDetail: React.FC = () => {
         ? Number((basicData.currentAmount * 100n) / basicData.targetAmount)
         : 0;
 
-    // Determine if this is the user's own proposal
-    const isCreator =
-      basicData.creator.toLowerCase() === userData?.xAccountId?.toLowerCase();
+    // Use the calculated isCreator value
+    const isCreator = isCreatorValue;
 
     // Determine if funding period has ended
     const isFundingEnded = statusData.timeRemaining === 0n;
@@ -567,6 +589,7 @@ export const ProposalDetail: React.FC = () => {
                 approvedContributors={approvedContributors}
                 isCreator={isCreator}
                 canReleaseFunds={canReleaseFunds}
+                proposalId={proposalId}
                 handleReleaseFunds={handleReleaseFunds}
                 contributionPending={contributionPending}
                 contributionConfirming={contributionConfirming}
@@ -588,6 +611,7 @@ export const ProposalDetail: React.FC = () => {
                   tradingPending={tradingPending}
                   tradingConfirming={tradingConfirming}
                   tradingError={tradingError}
+                  balanceLoading={balanceLoading}
                 />
               )}
             </TabPanel>

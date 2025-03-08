@@ -16,7 +16,7 @@ import {
   alpha,
 } from "@mui/material";
 import { usePrivy } from "@privy-io/react-auth";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useState, useEffect, FC } from "react";
 import { useAccount } from "wagmi";
@@ -55,14 +55,14 @@ const StyledCard = styled(Card)(() => ({
 
 const StyledInfoCard = styled(StyledCard)(() => ({
   background: `linear-gradient(135deg, ${alpha("#1DA1F2", 0.4)} 0%, ${alpha(
-    "#0c8bd9",
+    "#000000",
     0.4
   )} 100%)`,
   backdropFilter: "blur(10px)",
 }));
 
 const StyledButton = styled(Button)(() => ({
-  background: "linear-gradient(45deg, #1DA1F2 30%, #0c8bd9 90%)",
+  background: "linear-gradient(45deg,rgb(16, 16, 17) 30%,rgb(51, 79, 97) 90%)",
   border: 0,
   borderRadius: "8px",
   boxShadow: "0 3px 5px 2px rgba(29, 161, 242, .3)",
@@ -71,7 +71,7 @@ const StyledButton = styled(Button)(() => ({
   padding: "0 30px",
   transition: "all 0.3s ease",
   "&:hover": {
-    background: "linear-gradient(45deg, #0c8bd9 30%, #0a7bbf 90%)",
+    background: "linear-gradient(45deg, rgb(51, 79, 97) 30%, rgb(16, 16, 17) 90%)",
     boxShadow: "0 4px 10px 2px rgba(29, 161, 242, .4)",
   },
   "&.Mui-disabled": {
@@ -119,7 +119,7 @@ const TwitterConnectButton: FC<TwitterConnectButtonProps> = ({
     opacity: isTwitterLinkedToAnotherWallet && !hasTwitterLinked ? 0.6 : 1,
   };
 
-  return hasTwitterLinked ? (
+  return hasTwitterLinked && !isTwitterLinkedToAnotherWallet ? (
     <Tooltip title={`@${twitterUsername}`}>
       <div
         style={commonButtonStyles}
@@ -143,7 +143,7 @@ const TwitterConnectButton: FC<TwitterConnectButtonProps> = ({
           />
         ) : (
           <Avatar sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}>
-            <TwitterIcon sx={{ fontSize: isMobile ? "18px" : "20px" }} />
+            <XIcon sx={{ fontSize: isMobile ? "18px" : "20px" }} />
           </Avatar>
         )}
         {!isMobile && (
@@ -173,7 +173,7 @@ const TwitterConnectButton: FC<TwitterConnectButtonProps> = ({
           }
         }}
       >
-        <TwitterIcon style={{ fontSize: isMobile ? "18px" : "20px" }} />
+        <XIcon style={{ fontSize: isMobile ? "18px" : "20px" }} />
         {!isMobile && "Connect X"}
       </div>
     </Tooltip>
@@ -206,11 +206,11 @@ export const CustomConnectButton = () => {
   const handleUnlinkTwitter = async () => {
     try {
       await unlinkTwitter();
-      showSnackbar("Twitter account unlinked successfully", "success");
+      showSnackbar("X account unlinked successfully", "success");
       setTwitterModalOpen(false);
     } catch (error) {
-      console.error("Error unlinking Twitter:", error);
-      showSnackbar("Failed to unlink Twitter account", "error");
+      console.error("Error unlinking X:", error);
+      showSnackbar("Failed to unlink X account", "error");
     }
   };
 
@@ -317,13 +317,13 @@ export const CustomConnectButton = () => {
         <DialogTitle>
           <Typography variant='h6' sx={{ color: "white", fontWeight: 600 }}>
             {hasTwitterLinked
-              ? "Twitter Account Connected"
-              : "Connect Twitter Account"}
+              ? "X Account Connected"
+              : "Connect X Account"}
           </Typography>
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3}>
-            {hasTwitterLinked ? (
+            {hasTwitterLinked && !isTwitterLinkedToAnotherWallet ? (
               <>
                 <StyledInfoCard>
                   <CardContent>
@@ -342,7 +342,7 @@ export const CustomConnectButton = () => {
                         <Avatar
                           sx={{ width: 60, height: 60, bgcolor: "#1DA1F2" }}
                         >
-                          <TwitterIcon sx={{ fontSize: 30 }} />
+                          <XIcon sx={{ fontSize: 30 }} />
                         </Avatar>
                       )}
                       <Box>
@@ -375,13 +375,13 @@ export const CustomConnectButton = () => {
                       variant='subtitle1'
                       sx={{ color: "white", mb: 1 }}
                     >
-                      Twitter Account Benefits
+                      X Account Benefits
                     </Typography>
                     <Typography
                       variant='body2'
                       sx={{ color: "rgba(255, 255, 255, 0.7)" }}
                     >
-                      Your Twitter account is connected and can be used for DAO
+                      Your X account is connected and can be used for DAO
                       funding features. This helps build trust with other
                       community members and enhances your reputation within the
                       platform.
@@ -438,11 +438,11 @@ export const CustomConnectButton = () => {
                     }}
                   >
                     <Chip
-                      icon={<TwitterIcon style={{ color: "#1DA1F2" }} />}
-                      label='Twitter Connected'
+                      icon={<XIcon style={{ color: "#ffffff" }} />}
+                      label='Connected'
                       sx={{
-                        bgcolor: "rgba(29, 161, 242, 0.2)",
-                        color: "#1DA1F2",
+                        bgcolor: "linear-gradient(45deg,rgb(16, 16, 17) 30%,rgb(51, 79, 97) 90%)",
+                        color: "#ffffff",
                         borderRadius: "8px",
                         py: 1,
                         px: 1,
@@ -476,23 +476,23 @@ export const CustomConnectButton = () => {
                       sx={{
                         width: 70,
                         height: 70,
-                        bgcolor: "#1DA1F2",
+                        bgcolor: "#ffffff",
                         margin: "0 auto",
                         mb: 2,
                       }}
                     >
-                      <TwitterIcon sx={{ fontSize: 40 }} />
+                      <XIcon sx={{ fontSize: 40 }} />
                     </Avatar>
 
                     <Typography variant='h5' sx={{ color: "white", mb: 1 }}>
-                      Connect Your Twitter
+                      Connect Your X
                     </Typography>
 
                     <Typography
                       variant='body1'
                       sx={{ color: "rgba(255, 255, 255, 0.8)" }}
                     >
-                      Link your Twitter account to enhance your DAO experience
+                      Link your X account to enhance your DAO experience
                     </Typography>
                   </CardContent>
                 </StyledInfoCard>
@@ -551,11 +551,11 @@ export const CustomConnectButton = () => {
 
                 <StyledButton
                   fullWidth
-                  startIcon={<TwitterIcon />}
+                  startIcon={<XIcon />}
                   onClick={handleTwitterConnect}
                   disabled={isTwitterLinkedToAnotherWallet}
                 >
-                  Connect Twitter Account
+                  Connect X Account
                 </StyledButton>
                 {isTwitterLinkedToAnotherWallet && (
                   <Typography
@@ -567,7 +567,7 @@ export const CustomConnectButton = () => {
                       textAlign: "center",
                     }}
                   >
-                    This Twitter account is already linked to another wallet
+                    This X account is already linked to another wallet
                   </Typography>
                 )}
               </>

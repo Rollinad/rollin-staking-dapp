@@ -12,7 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
 import { useUserManagement } from '../hooks/useFundingContract';
-import TwitterIcon from '@mui/icons-material/Twitter';
+import XIcon from '@mui/icons-material/X';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StarIcon from '@mui/icons-material/Star';
 
@@ -146,18 +146,18 @@ export const BecomeCreator = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', my: 2 }}>
               <CheckCircleIcon sx={{ color: '#4caf50', mr: 1 }} />
               <Typography>
-                Twitter account <strong>@{twitterUsername}</strong> connected!
+                X account <strong>@{twitterUsername}</strong> connected!
               </Typography>
             </Box>
           ) : (
             <>
               <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 2, textAlign: 'center' }}>
-                To become a creator, you need to link your Twitter account for verification purposes.
+                To become a creator, you need to link your X account for verification purposes.
               </Typography>
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<TwitterIcon />}
+                startIcon={<XIcon />}
                 onClick={handleConnectTwitter}
                 sx={{ 
                   bgcolor: '#1DA1F2', 
@@ -166,7 +166,7 @@ export const BecomeCreator = () => {
                   px: 3
                 }}
               >
-                Connect Twitter Account
+                Connect X Account
               </Button>
             </>
           )}
