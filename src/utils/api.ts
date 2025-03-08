@@ -18,6 +18,7 @@ export type SwapRequestBody = {
   sellAmount: string;
   takerAddress: string;
   chainId: string;
+  slippageBps?: number;
 };
 
 export function setCorsHeaders(res: NextApiResponse) {

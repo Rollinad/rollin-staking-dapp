@@ -35,6 +35,10 @@ export default async function handler(
       tradeSurplusRecipient: process.env.VITE_0X_SURPLUS_RECIPIENT ?? "",
     });
 
+    if (data.slippageBps) {
+      params.append("slippageBps", data.slippageBps.toString());
+    }
+
     const response = await fetch(
       `https://api.0x.org/swap/permit2/quote?${params}`,
       { headers: zeroXHeaders }
