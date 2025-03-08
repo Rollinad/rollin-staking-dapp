@@ -257,6 +257,8 @@ npm run build
 
 ## Technical Architecture
 
+[![Technical](https://skillicons.dev/icons?i=solidity,typescript,next,react,vercel&theme=light)](https://skillicons.dev)
+
 ### Frontend
 - React application built with TypeScript
 - Component-based structure organized by feature domains
