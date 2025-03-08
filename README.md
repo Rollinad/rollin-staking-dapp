@@ -1,12 +1,59 @@
-# Rollinad DApp
+# Rollinad DApp - Technical Documentation
 
-A comprehensive DeFi platform for staking cryptocurrency tokens, swapping between tokens, and participating in DAO funding opportunities.
+This document provides a comprehensive technical overview of the Rollinad DApp, a decentralized finance (DeFi) platform built on the Monad blockchain (and EVM compatible chains). Rollinad offers staking, token swapping, and a DAO-based funding platform for new projects.
 
 ![Rollinad DApp](/public/icon.png)
 
-## Integrated Partners
+## 1. Introduction
 
-<div style="display: flex; align-items: center; gap: 30px; margin-bottom: 20px;">
+Rollinad DApp provides three core functionalities:
+
+*   **Staking:** Users can stake ERC20 tokens in customizable staking pools to earn rewards, with configurable durations, APY rates, and early withdrawal penalties.
+*   **Token Swapping:** Integrated with the 0x Protocol, users can seamlessly swap between various ERC20 tokens and the native token (e.g., MON, ETH). Both standard and gasless (meta-transaction) swaps are supported.
+*   **DAO Funding:** A decentralized autonomous organization (DAO) based funding platform where project creators can launch funding proposals. Users can contribute to proposals and receive project-specific tokens. Successful projects are initially listed on a built-in SimpleAMM. *A key planned feature is the integration of Uniswap V3 pools with bonding curves for enhanced liquidity after project funding.*
+
+## 2. System Architecture
+
+The Rollinad DApp consists of three main interacting components:
+
+*   **Frontend:** A React-based web application, built with Vite, providing the user interface. It uses Material UI for components and React Router for navigation.
+*   **Backend (API):** Next.js API routes handle data fetching, transaction preparation (including gasless transactions), and integration with external services like 0x Protocol.
+*   **Smart Contracts:** Solidity contracts deployed on the blockchain manage the core logic of staking, the DAO funding platform, token creation, and the SimpleAMM.
+
+```mermaid
+graph LR
+    subgraph Frontend
+        A[React Frontend]
+    end
+    subgraph Backend
+        B[Next.js API Routes]
+    end
+    subgraph Blockchain
+        C[Staking Contracts]
+        D[Funding Contracts]
+        E[Monad Blockchain]
+    end
+    subgraph External
+        F[0x API]
+        H[User Wallet]
+    end
+
+    A --> B
+    A --> H
+    A --> C
+    A --> D
+    H --> E
+    B --> F
+    C --> E
+    D --> E
+    F --> E
+```
+
+*System Architecture Diagram*
+
+## 3. Integrated Partners
+
+<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
   <a href="https://privy.io/" target="_blank">
     <img src="https://pbs.twimg.com/profile_images/1841145134739832833/jOnqiGU0_400x400.jpg" alt="Privy" height="50" style="border-radius: 8px;" />
   </a>
@@ -15,406 +62,272 @@ A comprehensive DeFi platform for staking cryptocurrency tokens, swapping betwee
   </a>
 </div>
 
-## Features
-
-### Staking
-- Create staking pools for ERC20 tokens
-- Define staking options with customizable durations and APY rates
-- Stake tokens to earn rewards
-- Early unstaking with configurable freeze periods and fees
-- Pool management tools for staking creators
-
-### Token Swapping
-- Swap between different tokens using 0x Protocol integration
-- Support for native token and ERC20 token swaps
-- Both standard and gasless swapping options
-- Real-time price quotes and efficient trade execution
-
-### DAO Funding
-- Create funding proposals for blockchain projects
-- Contribute to existing proposals with cryptocurrency
-- User registration system with creator privileges
-- Automatic token creation for funded projects
-- Trading platform for proposal tokens via SimpleAMM
-- Comprehensive proposal management with lifecycle states
-- **New: Bonding curve integration with Uniswap** after proposals reach funding target 
-
-## Features by Actor
-
-### Regular Users
-- Connect wallet via multiple options (Privy, RainbowKit)
-- Swap tokens with real-time quotes and fee estimates
-- View existing staking pools with APY and duration details
-- Stake tokens in available pools
-- Unstake tokens (with potential penalties for early withdrawal)
-- Browse funding proposals with detailed project information
-- Contribute to funding proposals with cryptocurrency
-- Trade proposal tokens on integrated AMM
-- Access Uniswap liquidity pools for funded projects
-
-### Pool Creators
-- Create new staking pools for specific ERC20 tokens
-- Configure staking options with:
-  - Custom durations
-  - APY rates
-  - Early withdrawal penalties
-  - Freeze periods
-- Monitor pool performance and analytics
-- Adjust pool parameters (within limits)
-- Withdraw collected fees (if applicable)
-
-### Project Creators
-- Register as a creator in the DAO funding system
-- Create detailed project proposals with:
-  - Funding goals and timelines
-  - Project descriptions and media
-  - Team information
-  - Roadmap and milestones
-- Manage proposal lifecycle
-- Receive contributions directly to designated wallet
-- Monitor funding progress and analytics
-- Deploy project tokens automatically upon successful funding
-- Leverage Uniswap integration for token liquidity after funding completion
-
-### Platform Administrators
-- Monitor overall platform metrics
-- Manage platform parameters and fees
-- Pause contracts in emergencies
-- Upgrade contracts when needed
-- Adjust supported token lists
-
-## Business Flow Activity Diagrams
-
-### User Onboarding Flow
-```
-┌─────────────────┐     ┌────────────────────┐     ┌────────────────────┐
-│  Visit Platform │     │  Connect Wallet    │     │  Accept Terms of   │
-│  Homepage       ├────►│  via Privy/Rainbow ├────►│  Service (if new)  │
-└─────────────────┘     └────────────────────┘     └─────────┬──────────┘
-                                                             │
-┌─────────────────┐     ┌────────────────────┐     ┌─────────▼──────────┐
-│  Access All     │     │  View Dashboard    │     │  Profile Creation  │
-│  DApp Features  │◄────┤  Overview          │◄────┤  (Optional)        │
-└─────────────────┘     └────────────────────┘     └────────────────────┘
-```
-
-### Token Swapping Business Flow
-```
-┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ User        │     │ Select tokens  │     │ System fetches  │
-│ visits swap ├────►│ & enter amount ├────►│ real-time quote │
-│ interface   │     └────────────────┘     └────────┬────────┘
-└─────────────┘                                     │
-                                                    │
-                    ┌────────────────┐     ┌────────▼────────┐
-                    │ Execute        │     │ User reviews    │
-                    │ transaction    │◄────┤ quote & fees    │
-                    └────────────────┘     └─────────────────┘
-```
-
-### Complete Staking Business Flow
-```
-┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ User views  │     │ User selects   │     │ User chooses    │
-│ available   ├────►│ specific pool  ├────►│ staking option  │
-│ pools       │     │                │     │ (duration/APY)  │
-└─────────────┘     └────────────────┘     └────────┬────────┘
-                                                    │
-┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
-│ User claims │     │ System         │     │ User approves   │
-│ rewards or  │◄────┤ locks tokens   │◄────┤ & deposits      │
-│ unstakes    │     │ for duration   │     │ tokens          │
-└──────┬──────┘     └────────────────┘     └─────────────────┘
-       │
-       │           Early Unstaking Path
-       │      ┌────────────────┐     ┌─────────────────┐
-       └─────►│ User pays early│     │ System applies  │
-              │ withdrawal fee ├────►│ freeze period   │
-              └────────────────┘     └─────────────────┘
-```
-
-### Full Staking Pool Creation Business Flow
-```
-┌─────────────┐     ┌────────────────┐     ┌───────────────────┐
-│ Creator     │     │ Selects token  │     │ Defines multiple  │
-│ initiates   ├────►│ to be staked   ├────►│ staking options   │
-│ pool setup  │     │                │     │ with APY/duration │
-└─────────────┘     └────────────────┘     └────────┬──────────┘
-                                                    │
-┌─────────────┐     ┌────────────────┐     ┌────────▼──────────┐
-│ Pool        │     │ Creator        │     │ Sets penalties    │
-│ becomes     │◄────┤ deposits       │◄────┤ for early         │
-│ active      │     │ initial tokens │     │ withdrawal        │
-└──────┬──────┘     └────────────────┘     └──────────────────┘
-       │
-       │           Pool Management
-       │      ┌────────────────┐     ┌─────────────────┐
-       └─────►│ Monitor pool   │     │ Collect fees    │
-              │ analytics      ├────►│ & adjust params │
-              └────────────────┘     └─────────────────┘
-```
-
-### Complete DAO Funding & Proposal Lifecycle
-```
-┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ User        │     │ Complete       │     │ Proposal drafted│
-│ registers as├────►│ creator        ├────►│ with details    │
-│ creator     │     │ verification   │     │ & milestones    │
-└─────────────┘     └────────────────┘     └────────┬────────┘
-                                                    │
-┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
-│ System      │     │ Proposal opens │     │ Proposal        │
-│ validates   ├────►│ for funding    ├────►│ accumulates     │
-│ proposal    │     │                │     │ contributions   │
-└──────┬──────┘     └────────────────┘     └────────┬────────┘
-       │                                            │
-       │      If funding goal reached               │
-       │      ┌────────────────┐     ┌──────────────▼───────┐
-       └─────►│ Project tokens │     │ Trading begins on    │
-              │ are created    ├────►│ SimpleAMM            │
-              └────────┬───────┘     └──────────┬───────────┘
-                       │                        │
-                       │                        │
-                       │                        ▼
-                       │            ┌────────────────────────┐
-                       │            │ Bonding curve          │
-                       │            │ integration with       │
-                       │            │ Uniswap established    │
-                       │            └────────────┬───────────┘
-                       │                         │
-                       │           Project Execution
-                       │      ┌───────────────────────────┐
-                       └─────►│ Creator implements project│
-                              │ & provides updates        │
-                              └───────────────────────────┘
-```
-
-### Contribution & Token Trading Flow
-```
-┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ User browses│     │ Reviews project│     │ Decides to      │
-│ proposal    ├────►│ details and    ├────►│ contribute      │
-│ marketplace │     │ team info      │     │ to proposal     │
-└─────────────┘     └────────────────┘     └────────┬────────┘
-                                                    │
-┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
-│ User        │     │ System issues  │     │ User approves   │
-│ receives    │◄────┤ project tokens │◄────┤ & sends funds   │
-│ tokens      │     │ to contributor │     │ to proposal     │
-└──────┬──────┘     └────────────────┘     └─────────────────┘
-       │
-       │           Token Trading
-       │      ┌────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-       ├─────►│ User visits    │     │ Sets price and  │     │ Trade executed  │
-       │      │ SimpleAMM      ├────►│ amount to trade ├────►│ on SimpleAMM    │
-       │      │ interface      │     │                 │     │                 │
-       │      └────────────────┘     └─────────────────┘     └─────────────────┘
-       │
-       │           Uniswap Trading (After Funding)
-       └─────►┌────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-              │ User accesses  │     │ Interacts with  │     │ Benefits from   │
-              │ Uniswap        ├────►│ bonding curve   ├────►│ improved        │
-              │ pools          │     │ liquidity       │     │ liquidity       │
-              └────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-### Gasless Transaction Flow
-```
-┌─────────────┐     ┌────────────────┐     ┌─────────────────┐
-│ User selects│     │ System prepares│     │ User signs      │
-│ gasless     ├────►│ transaction    ├────►│ message (not    │
-│ option      │     │ parameters     │     │ transaction)    │
-└─────────────┘     └────────────────┘     └────────┬────────┘
-                                                    │
-┌─────────────┐     ┌────────────────┐     ┌────────▼────────┐
-│ Transaction │     │ Relayer submits│     │ System verifies │
-│ confirmed   │◄────┤ transaction    │◄────┤ signature       │
-└─────────────┘     └────────────────┘     └─────────────────┘
-```
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v18+)
-- npm
-
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/your-username/rollinad-dapp.git
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-### Building for Production
-```bash
-npm run build
-```
-
-## Technical Architecture
-
+## 4. Technologies Used
 [![Technical](https://skillicons.dev/icons?i=solidity,typescript,next,react,vercel&theme=light)](https://skillicons.dev)
 
-### Frontend
-- React application built with TypeScript
-- Component-based structure organized by feature domains
-- Material UI with custom theming for consistent UI components
-- React Router for seamless navigation
-- Context providers for efficient global state management:
-  - SnackbarContext for notifications
-  - WalletSyncProvider for wallet connection synchronization
+This section lists the technologies, libraries, and frameworks used.
 
-### API Integration
-- Dedicated API routes for interacting with 0x Protocol
-- Gas-less transaction support with specialized endpoints
-- Uniswap integration for bonding curve liquidity
+### 4.1 Core Technologies
 
-### Blockchain Integration
-- Wagmi library for React-Ethereum integration
-- RainbowKit for intuitive wallet connection UI
-- Privy integration for social login and wallet management
-- Viem for type-safe Ethereum interactions
-- Multi-chain support:
-  - Monad Testnet (primary)
+| Category          | Technology          | Description                                                                   |
+| :---------------- | :------------------ | :---------------------------------------------------------------------------- |
+| Languages         | TypeScript, Solidity, JavaScript | Primary programming languages.                                            |
+| Build Tools       | Vite, Webpack         | Frontend build tools.                                                        |
+| State Management  | React Context API, React Query | Managing application state.                                               |
+| Version Control   | Git                 | Code changes and collaboration.                                             |
+| CI/CD             | GitHub Actions        | Automating build, testing, and deployment.                                  |
+| Infrastructure    | Vercel              | Hosting the frontend and serverless functions.                               |
 
-## Smart Contracts
+### 4.2 Frontend
 
-### Staking Contracts
+| Category          | Technology              | Description                                              |
+| :---------------- | :---------------------- | :------------------------------------------------------- |
+| Framework         | React 18                | UI library.                                               |
+| Build System      | Vite                    | Build tool and dev server.                               |
+| UI Library        | Material UI v5          | React component library.                                 |
+| Styling           | Emotion, styled-components | Styling solutions.                                       |
+| Form Management   | React Hook Form, Zod   | Form management and validation.                           |
+| Routing           | React Router v6         | Navigation.                                              |
+| Data Fetching     | TanStack Query (React Query)        | Data fetching and caching.                                  |
+| Animation         | Framer Motion           | Animation library.                                       |
+| Internationalization | i18next                 | Internationalization.                                    |
+| Date & Time       | date-fns                | Date and time manipulation.                              |
+| Icons             | Material Icons, custom SVGs | Icons.                                                  |
+
+### 4.3 Web3 Integration
+
+| Category            | Technology             | Description                                                 |
+| :------------------ | :--------------------- | :---------------------------------------------------------- |
+| Core Libraries      | Wagmi                  | React hooks for Ethereum.                                   |
+|                     | Viem                   | Type-safe Ethereum interactions.                            |
+|                     | Ethers.js              | Blockchain interactions.                                   |
+| Wallet Connection   | RainbowKit             | Wallet connection UI.                                      |
+|                     | Privy                  | Social login and wallet management.                         |connection.                                         |
+| Protocol Integrations | 0x Protocol API       | Decentralized exchange aggregation.                        |
+
+### 4.4 Smart Contracts
+
+| Category              | Technology              | Description                                                |
+| :-------------------- | :---------------------- | :--------------------------------------------------------- |
+| Language              | Solidity ^0.8.17         | Smart contract language.                                   |
+| Development Framework | Hardhat                 | Development environment.                                   |frameworks.                                         |
+| Deployment            | Hardhat deploy scripts  | Deployment scripts.                                        |
+| Standards             | ERC20, ERC721           | Ethereum token standards.                                   |
+| Security              | OpenZeppelin Contracts | Secure smart contract components.                           |
+
+### 4.5 Backend / API
+
+| Category         | Technology                | Description                                                |
+| :--------------- | :------------------------ | :--------------------------------------------------------- |
+| Framework        | Next.js API routes          | Serverless functions.                                      |
+| Data Validation  | Zod, TypeScript           | Data integrity and type safety.                             |
+| Authentication   | JWT, NextAuth.js (Optional) | User authentication (if applicable).                      |
+| Integrations     | 0x Protocol               | Swap quotes and transactions.                               |
+|                  | Permissionless             | Account abstraction (gasless transactions).                |
+|                  | RPC providers             | Connecting to Ethereum.                                    |
+### 4.6 DevOps & Quality
+
+| Category        | Technology             | Description                                         |
+| --------------- | :---------------------- | :--------------------------------------------------- |
+| Linting         | ESLint, Prettier      | Code style and error checking.                       |
+| Type Checking   | TypeScript, tsc        | Static type checking.                                |
+| Development Utilities | Concurrently      | Running multiple servers.                          |
+|                 | dotenv                | Environment variables.                                |hooks.                                          |
+| Development Framework | Hardhat                 | Development environment for compiling, testing, and deploying contracts.          |
+
+## 5. External Dependencies
+
+*   **Privy:** ([privy.io](https://privy.io/)) Wallet connection and user management.
+*   **0x Protocol:** ([0x.org](https://0x.org/)) Decentralized exchange aggregation.
+*   **Uniswap V3:** ([uniswap.org](https://uniswap.org/)) *Planned Integration:* Automated market maker (AMM) for liquidity pools.
+*   **Rainbow Kit:** ([rainbowkit.com/](https://rainbowkit.com/)) Connecting wallets to Dapps.
+*   **Vercel:** Frontend and serverless function deployment.
+
+## 6. Smart Contract Architecture
+
+### 6.1 Staking Contracts (`contract/staking/`)
+
+*   **`RollinStaking.sol`:** Manages staking pools: creation, staking, unstaking, rewards, and pool management.
+
+    ```mermaid
+    graph TD
+        A[User selects staking pool] --> B{Pool exists?};
+        B -- Yes --> C[User enters stake amount];
+        B -- No --> D[Display error];
+        C --> E{Sufficient balance?};
+        E -- Yes --> F[Request wallet signature];
+        E -- No --> G[Display insufficient balance];
+        F --> H[User signs transaction];
+        H --> I[Send to blockchain];
+        I --> J{Transaction successful?};
+        J -- Yes --> K[Update pool state];
+        J -- No --> L[Display error];
+        K --> M[User receives rewards];
+    ```
+    *Staking Flowchart*
+
+*   **`FeeVault.sol`:** Collects fees (e.g., from early withdrawals). Administrators can withdraw fees.
+
+### 6.2 Funding Contracts (`contract/funding/`)
+
+*   **`DAOFunding.sol`:** Orchestrates the DAO funding platform.
+*   **`DAOView.sol`:** Read-only functions for efficient data retrieval.
+*   **`core/`:** Core contract logic (reusability, upgradeability).
+*   **`interfaces/`:** Interface definitions for contract interactions.
+*   **`libraries/`:** Reusable utility libraries.
+*   **`managers/`:** Modular components:
+      * **`UserManager.sol`:** User registration, creator privileges, KYC/AML (if applicable).
+
+        ```mermaid
+        graph TD
+            A[User requests registration] --> B{User already registered?};
+            B -- Yes --> C[Display error];
+            B -- No --> D{KYC/AML Check};
+            D -- Pass --> E[Register user];
+            D -- Fail --> F[Reject registration];
+            E --> G[Grant creator privileges];
+        ```
+
+        *UserManager.sol Flowchart*
+
+      * **`ProposalManager.sol`:** Proposal lifecycle management.
+
+        ```mermaid
+        graph TD
+            A[User initiates proposal] --> B[Frontend validates input];
+            B -- Valid --> C[Frontend -> API];
+            B -- Invalid --> F[Display error];
+            C --> D[API prepares transaction];
+            D --> E[API requests signature];
+            E --> G[User signs];
+            G --> H[API/Relayer submits to blockchain];
+            H --> I[Contract creates proposal];
+            I --> J[Frontend updates UI];
+        ```
+
+        *ProposalManager.sol Flowchart*
+
+      * **`ContributionManager.sol`:** User contributions, token issuance.
+
+        ```mermaid
+        graph TD
+            A[User selects proposal] --> B[User enters contribution amount];
+            B --> C{Proposal is active?};
+            C -- Yes --> D{Sufficient funds?};
+            C -- No --> E[Display error];
+            D -- Yes --> F[Request wallet signature];
+            D -- No --> G[Display insufficient balance];
+            F --> H[User signs transaction];
+            H --> I[Send to blockchain];
+            I --> J{Transaction successful?};
+            J -- Yes --> K[Update contribution records];
+            K --> L[Issue project tokens to user];
+            J -- No --> M[Display transaction error];
+        ```
+
+        *ContributionManager.sol Flowchart*
+    *   **`TradingManager.sol`:** Integrates with `SimpleAMM.sol` and *will integrate with Uniswap V3* (Section 7).
+*   **`tokens/`:**
+    *   **`DAOToken.sol`:** ERC20 token template for funded projects.
+    *   **`SimpleAMM.sol`:** Basic AMM for initial trading *before* Uniswap V3.
+
+## 7. Bonding Curve & Uniswap Integration (Planned Feature)
+
+*This section describes the planned Uniswap V3 integration. This feature is under development.*
+
+Goal: Robust and liquid market for project tokens.
+
+1.  **`DAOToken` Creation:** A new `DAOToken` (ERC20) is minted.
+2.  **`SimpleAMM` Initialization:** Trading starts on `SimpleAMM`.
+3.  **Uniswap V3 Pool Creation (Future):** `TradingManager.sol` creates a Uniswap V3 pool (calling the Uniswap Contracts) pairing `DAOToken` with a stablecoin/Native Token.
+4.  **Initial Liquidity Provisioning (Future):** Funds and `DAOToken` provide initial liquidity, setting the initial price and bonding curve (configurable).
+5.  **Bonding Curve Mechanics (Future):** Uniswap V3's concentrated liquidity acts as a bonding curve. Price changes with buys/sells.
+
+## 8. Token Swapping
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant ZeroX
+    participant Wallet
+    participant Blockchain
+
+    User->>Frontend: Select tokens and amount
+    Frontend->>API: Request swap quote
+    API->>ZeroX: Request quote
+    ZeroX-->>API: Return quote
+    API-->>Frontend: Display quote
+    User->>Frontend: Confirm swap
+    Frontend->>API: Build transaction
+    API->>Wallet: Request signature
+    Wallet-->>User: Display for approval
+    User->>Wallet: Sign transaction
+    Wallet-->>API: Signed transaction
+    API->>Blockchain: Submit transaction
+    Blockchain-->>API: Confirmation
+    API-->>Frontend: Update UI
+    Frontend-->>User: Display success
 ```
-contract/staking/
-├── RollinStaking.sol - Main staking contract with pool management
-└── FeeVault.sol - Contract for collecting staking fees
+
+*Token Swapping Sequence Diagram*
+
+## 9. Gasless Transactions
+
+Gasless transactions are supported via a relayer system:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Relayer
+    participant Contract
+
+    User->>Frontend: Initiate gasless action
+    Frontend->>API: Prepare transaction data
+    API->>User: Request signature (EIP-712)
+    User->>API: Provide signed message
+    API->>Relayer: Send signed message
+    Relayer->>Contract: Submit transaction (paying gas)
+    Contract->>Contract: Verify signature (_msgSender())
+    Contract->>Relayer: Transaction result
+    Relayer->>API: Confirmation
+    API->>Frontend: Update UI
+    Frontend-->>User: Display result
 ```
 
-### Funding Contracts
-```
-contract/funding/
-├── DAOFunding.sol - Main contract for DAO funding platform
-├── DAOView.sol - View functions for DAO data
-├── core/ - Core contract functionality
-├── interfaces/ - Contract interfaces
-├── libraries/ - Utility libraries
-├── managers/ - Specialized management modules
-│   ├── UserManager.sol - User registration and permissions
-│   ├── ProposalManager.sol - Proposal lifecycle management
-│   ├── ContributionManager.sol - Handles contributions
-│   └── TradingManager.sol - Token trading functionality
-└── tokens/
-    ├── DAOToken.sol - ERC20 tokens for funded projects
-    └── SimpleAMM.sol - Automated Market Maker for trading
-```
+*Gasless Transaction Sequence Diagram*
 
-## Bonding Curve & Uniswap Integration
+1.  **User Selection:** User chooses "gasless" option.
+2.  **Transaction Preparation:** Frontend prepares transaction data as a *message*.
+3.  **Signature:** User signs an EIP-712 message (no gas cost).
+4.  **Relayer Submission:** Signed message is sent to a relayer.
+5.  **Signature Verification:** Smart contract verifies the signature.
+6.  **Transaction Execution:** Smart contract executes the action.
+7.  **Relayer compensation:** (Not detailed here, but the relayer needs compensation).  Uses `_msgSender()` and `Permissionless`.
 
-The platform now features a seamless integration with Uniswap after proposals reach their funding target:
+## 10. Security Considerations
 
-1. **Automatic Liquidity Pool Creation**:
-   - When a proposal reaches its funding target, in addition to enabling SimpleAMM trading, the system now establishes a Uniswap liquidity pool
-   - This creates a bonding curve mechanism that provides deeper liquidity for project tokens
+*   **Audits:** Smart contracts *should undergo* independent security audits.
+*   **Formal Verification:** Consideration *should be given* to formal verification.
+*   **Access Control:** `Ownable` and potentially `Roles` for restricted functions.
+*   **Reentrancy Guards:** `ReentrancyGuard` to prevent attacks.
+*   **Input Validation:** Rigorous validation on frontend (Zod, React Hook Form) and contracts.
+*   **Emergency Pause:** `Pausable` for emergency halting.
+*   **Upgradeable Contracts:** Consideration for upgradeable patterns (with risk management).
+*   **Rate Limiting:** API rate limiting to prevent DoS.
+*   **Safe Math:** OpenZeppelin SafeMath or Solidity >= 0.8.
 
-2. **Benefits for Token Holders**:
-   - Improved token liquidity via Uniswap's larger ecosystem
-   - Price discovery through market forces
-   - Ability to trade tokens across multiple DEXes
+## 11. Future Enhancements
 
-3. **Technical Implementation**:
-   - Programmatic creation of Uniswap V3 pools with appropriate fee tiers
-   - Initial liquidity provisioning from project treasury
-   - Smart contract hooks that trigger after successful funding completion
+*   **Cross-Chain Functionality:** Support multiple blockchains.
+*   **Advanced Analytics:** More comprehensive analytics.
+*   **Governance Features:** On-chain governance.
+*   **Customizable Bonding Curves:** Configurable bonding curve parameters.
+*   **Liquidity Mining Incentives:** Rewards for providing liquidity.
+*   **Uniswap V3 Integration:** *Currently under development.* Complete the integration.
 
-4. **Future Enhancements**:
-   - Customizable bonding curve parameters for project creators
-   - Liquidity mining incentives for early supporters
-   - Cross-chain liquidity bridges
-
-## Tech Stack
-
-### Core Technologies
-- **Languages**: TypeScript, Solidity, JavaScript
-- **Build Tools**: Vite, Webpack
-- **State Management**: React Context API, React Query
-- **Version Control**: Git
-- **CI/CD**: GitHub Actions
-- **Infrastructure**: Vercel
-
-### Frontend
-- **Framework**: React 18
-- **Build System**: Vite
-- **UI Library**: Material UI v5
-- **Styling**: Emotion, styled-components
-- **Form Management**: React Hook Form, Zod
-- **Routing**: React Router v6
-- **Data Fetching**: TanStack Query (React Query)
-- **Animation**: Framer Motion
-- **Internationalization**: i18next
-- **Date & Time**: date-fns
-- **Icons**: Material Icons, custom SVGs
-
-### Web3 Integration
-- **Core Libraries**:
-  - Wagmi for React hooks to interact with Ethereum
-  - Viem for type-safe Ethereum interactions
-  - Ethers.js for blockchain interactions
-- **Wallet Connection**:
-  - RainbowKit for intuitive wallet connection UI
-  - Privy for social login and wallet management
-  - WalletConnect v2 support
-- **Protocol Integrations**:
-  - 0x Protocol API for token swaps
-  - Uniswap SDK for bonding curve implementation
-  - Infura/Alchemy for RPC providers
-
-### Smart Contracts
-- **Language**: Solidity ^0.8.17
-- **Development Framework**: Hardhat
-- **Testing**: Chai, Mocha, Waffle
-- **Deployment**: Hardhat deploy scripts
-- **Standards**: ERC20, ERC721
-- **Security**: OpenZeppelin contracts
-
-### Backend / API
-- **Framework**: Next.js API routes
-- **Data Validation**: Zod, TypeScript
-- **Authentication**: JWT, NextAuth.js
-- **Integrations**:
-  - 0x Protocol for swap quotes
-  - Permissionless for account abstraction
-  - RPC providers for blockchain data
-
-### DevOps & Quality
-- **Linting**: ESLint, Prettier
-- **Type Checking**: TypeScript, tsc
-- **Testing**: Jest, React Testing Library
-- **Development Utilities**: 
-  - Concurrently for running multiple servers
-  - dotenv for environment variables
-  - Husky for git hooks
-
-## Architecture Diagrams
-
-### System Architecture
-```
-┌─────────────────────────────────────────────────────────┐
-│                  React Frontend (Vite)                  │
-├─────────────┬─────────────────────────┬───────────────-─┤
-│  Staking    │      DAO Funding        │  Token Swap     │
-│  Module     │      Module             │  Module         │
-└──────┬──────┴──────────┬──────────────┴────────┬───────-┘
-       │                 │                       │        
-┌──────▼─────────────────▼──────────────────────▼───────┐
-│               Web3 Integration Layer                  │
-│    (Wagmi, Viem, RainbowKit, Privy, Ethers.js)        │
-└──────┬─────────────────┬──────────────────────┬───────┘
-       │                 │                      │        
-┌──────▼──────┐  ┌───-───▼─────┐  ┌────────────-▼──────┐
-│  Staking    │  │  Funding    │  │  0x/Uniswap APIs   │
-│  Contracts  │  │  Contracts  │  │  (Liquidity)       │
-└─────────────┘  └─────────────┘  └────────────────────┘
-```
-
-## License
+## 12. License
 All files are covered by the MIT license, see [`LICENSE`](./LICENSE).
