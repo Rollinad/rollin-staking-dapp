@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Paper, 
@@ -21,19 +21,38 @@ import {
   TableRow
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { formatEther } from 'viem';
+import { formatEther, Address } from 'viem';
 import { stringToColor } from '../../utils/stringToColor';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { useContributionManagement, useProposalQueries, useUserManagement } from '../../hooks/useFundingContract';
-import { ProposalView } from '../../types/funding';
-import { useAccount } from 'wagmi';
+import { 
+  useUserManagement, 
+  useProposalQueries,
+} from '../../hooks/useFundingContract';
+import { useAccount, usePublicClient } from 'wagmi';
+import { DAO_VIEW_CONTRACT_ADDRESS } from '../../constants';
+import { DAOViewABI } from '../../constants/funding/abi';
+
+// Define an interface for proposal view
+interface ProposalView {
+  creator: Address;
+  tokenName: string;
+  tokenSymbol: string;
+  creatorXAccountId: string;
+  targetAmount: bigint;
+  currentAmount: bigint;
+  hasMetTarget: boolean;
+  isActive: boolean;
+  isApproved: boolean;
+  isClosed: boolean;
+  tokensDeployed: boolean;
+}
 
 // Define an interface for contribution data
 interface ContributionData {
   proposalId: number;
-  proposal: any;
+  proposal: ProposalView;
   contribution: {
     limit: bigint;
     currentContribution: bigint;
@@ -43,81 +62,162 @@ interface ContributionData {
   };
 }
 
-// Type for contribution info from the hook
-type ContributionInfoTuple = [bigint, bigint, bigint, boolean, boolean];
+// Create a special hook to check if a proposal is relevant to the user
+const useRelevantProposals = (proposalIds: bigint[] | undefined) => {
+  return useCallback((proposalId: number) => {
+    // If the user is the creator of this proposal, it's relevant
+    if (proposalIds && proposalIds.some(id => Number(id) === proposalId)) {
+      return true;
+    }
+    
+    // For simplicity, let's also check the first 10 proposals for all users
+    if (proposalId < 10) {
+      return true;
+    }
+    
+    return false;
+  }, [proposalIds]);
+};
 
 export const MyContributions = () => {
   const navigate = useNavigate();
-  const { chain } = useAccount();
+  const { address, chain } = useAccount();
   const { userData, userDataLoading } = useUserManagement();
-  
-  // State to track the current proposal we're checking
-  const [currentProposalIndex, setCurrentProposalIndex] = useState<number | null>(null);
   const [contributions, setContributions] = useState<ContributionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const publicClient = usePublicClient();
+  const [fetched, setFetched] = useState(false);
   
-  // Get all proposals first
-  const { data: allProposals, isLoading: proposalsLoading } = useProposalQueries().useFilteredProposals(false, false);
+  // Use a much smaller limit to reduce request load
+  const { useProposalsPaginated } = useProposalQueries();
+  const { data: allProposalsResult, isLoading: allProposalsLoading } = useProposalsPaginated(0n, 10n);
   
-  // Now use the contribution hook for the current proposal we're checking
-  const { useContributionInfo } = useContributionManagement();
-  const { data: contributionInfo, isLoading: contributionLoading } = useContributionInfo(
-    currentProposalIndex !== null ? BigInt(currentProposalIndex) : undefined
+  // Define a type for the tuple return from the contract
+  type ProposalResultTuple = [ProposalView[], bigint];
+  
+  // Create our relevance checking hook
+  const isProposalRelevant = useRelevantProposals(
+    userData?.proposalIds
   );
   
-  // Process proposals one by one
-  useEffect(() => {
-    if (!userData?.isRegistered || !allProposals || proposalsLoading) {
-      return;
-    }
+  // Create a memoized function for checking contributions
+  const checkContribution = useCallback(async (proposalId: number | undefined) => {
+    if (!address || !publicClient) return null;
     
-    // If haven't started checking yet, start with the first proposal
-    if (currentProposalIndex === null && (allProposals as ProposalView[]).length > 0) {
-      setLoading(true);
-      setCurrentProposalIndex(0);
-      return;
+    try {
+      const result = await publicClient.readContract({
+        address: DAO_VIEW_CONTRACT_ADDRESS as Address,
+        abi: DAOViewABI,
+        functionName: "getContributionInfo",
+        args: [BigInt(proposalId ?? 0), address]
+      }) as [bigint, bigint, bigint, boolean, boolean];
+      
+      // Destructure the contribution info
+      const [limit, currentContribution, tokenAllocation, isApproved, hasRequested] = result;
+
+      console.log(`result ${result}`)
+      
+      // Only return if there's an actual contribution
+      if (currentContribution <= 0n) return null;
+      
+      return {
+        limit,
+        currentContribution,
+        tokenAllocation,
+        isApproved,
+        hasRequested
+      };
+    } catch (error) {
+      console.error(`Error checking contribution for proposal ${proposalId}:`, error);
+      return null;
     }
-    
-    // If done checking all proposals, finish
-    if (currentProposalIndex !== null && currentProposalIndex >= (allProposals as ProposalView[]).length) {
-      setLoading(false);
-      setCurrentProposalIndex(null);
-      return;
-    }
-  }, [currentProposalIndex, allProposals, proposalsLoading, userData]);
+  }, [address, publicClient]);
   
-  // Process the current contribution when data is loaded
+  // Main effect to load user contributions
   useEffect(() => {
-    if (currentProposalIndex === null || contributionLoading || !contributionInfo || !allProposals) {
+    // Exit early if data is still loading or user isn't registered
+    if (userDataLoading || allProposalsLoading) {
       return;
     }
     
-    // Safely cast the contribution info to the expected tuple type
-    const infoTuple = contributionInfo as unknown as ContributionInfoTuple;
+    // If user not registered or no proposals, stop loading
+    if (!userData || !userData.isRegistered || !allProposalsResult) {
+      setLoading(false);
+      return;
+    }
     
-    // Format the contribution data
-    const formattedInfo = {
-      limit: infoTuple[0],
-      currentContribution: infoTuple[1],
-      tokenAllocation: infoTuple[2],
-      isApproved: infoTuple[3],
-      hasRequested: infoTuple[4]
+    // Only proceed if we have proposals data in the expected format
+    if (!allProposalsResult || !Array.isArray(allProposalsResult) || allProposalsResult.length < 1) {
+      setLoading(false);
+      return;
+    }
+    
+    // Format proposals data from the tuple
+    const allProposals = (allProposalsResult as ProposalResultTuple)[0];
+    
+    const getUserContributions = async () => {
+      try {
+        if (fetched) {
+          setLoading(false);
+          return;
+        }
+        setLoading(true);
+        const userContributions: ContributionData[] = [];
+        
+        // Track which proposals we've checked to avoid duplicates
+        const checkedProposals = new Set();
+        
+        // Process proposals with delays to avoid rate limiting
+        for (let i = 0; i < allProposals.length; i++) {
+          // Check if we've already processed this proposal
+          if (checkedProposals.has(i)) continue;
+          
+          // Check if this proposal is relevant to the user
+          if (!isProposalRelevant(i)) continue;
+          
+          // Mark as checked
+          checkedProposals.add(i);
+          
+          // Add a delay between requests
+          if (i > 0 && i % 3 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
+          // Get the current proposal
+          const proposal = allProposals[i];
+          
+          // Check for user contribution
+          const contributionInfo = await checkContribution(i);
+          
+          // Add to list if a contribution exists
+          if (contributionInfo) {
+            userContributions.push({
+              proposalId: i,
+              proposal,
+              contribution: contributionInfo
+            });
+          }
+          if (i === allProposals.length - 1) {
+            setFetched(true)
+          }
+          await new Promise((resolve) => {
+            setTimeout(resolve, 2000)
+          })
+        }
+        
+        setContributions(userContributions);
+      } catch (error) {
+        console.error("Error fetching user contributions:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     
-    // Add to contributions if there's an actual contribution
-    if (formattedInfo.currentContribution > 0n) {
-      setContributions(prev => [...prev, {
-        proposalId: currentProposalIndex,
-        proposal: (allProposals as ProposalView[])[currentProposalIndex],
-        contribution: formattedInfo
-      }]);
-    }
-    
-    // Move to the next proposal
-    setCurrentProposalIndex(prev => prev !== null ? prev + 1 : null);
-  }, [contributionInfo, contributionLoading, currentProposalIndex, allProposals]);
+    getUserContributions();
+  }, [userData, userDataLoading, allProposalsResult, allProposalsLoading, address, isProposalRelevant, checkContribution, fetched]);
   
-  if (userDataLoading || proposalsLoading || loading) {
+  // Show loading state
+  if (loading) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 8 }}>
         <CircularProgress size={40} />
