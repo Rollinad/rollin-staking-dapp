@@ -36,7 +36,6 @@ interface ProposalHeaderProps {
   canWithdraw: boolean;
   canTrade: boolean;
   percentComplete: number;
-  handleApproveProposal: () => void;
   handleRequestToContribute: () => void;
   handleReleaseFunds: () => void;
   handleWithdraw: () => void;
@@ -65,7 +64,6 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
   canWithdraw,
   canTrade,
   percentComplete,
-  handleApproveProposal,
   handleRequestToContribute,
   handleReleaseFunds,
   handleWithdraw,
@@ -74,8 +72,6 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
   formatCreationDate,
   contributionPending,
   contributionConfirming,
-  proposalPending,
-  proposalConfirming,
   tradingPending,
   tradingConfirming,
   tokenBalance,
@@ -252,26 +248,6 @@ export const ProposalHeader: React.FC<ProposalHeaderProps> = ({
                 )}
               </Box>
             </Box>
-
-            {/* Action buttons */}
-            {!proposalBasic.isApproved && userData?.isRegistered && (
-              <Button
-                variant='contained'
-                color='warning'
-                onClick={handleApproveProposal}
-                disabled={
-                  proposalPending || proposalConfirming || !userData?.isCreator
-                }
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                {proposalPending || proposalConfirming ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  "Approve Proposal"
-                )}
-              </Button>
-            )}
 
             {proposalBasic.isApproved &&
               !proposalBasic.isClosed &&

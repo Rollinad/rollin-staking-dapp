@@ -190,7 +190,6 @@ export const ProposalDetail: React.FC = () => {
   } = useContributionManagement();
 
   const {
-    approveProposal,
     isPending: proposalPending,
     isConfirming: proposalConfirming,
   } = useProposalManagement();
@@ -207,6 +206,12 @@ export const ProposalDetail: React.FC = () => {
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
+
+  const refetchAll = () => {
+    refetchBasicData();
+    refetchStatusData();
+    refetchTokenData();
+  }
 
   // Check if critical data is loading - this affects if we can determine the structure of tabs
   const isCriticalDataLoading = basicLoading || tokenLoading || statusLoading;
@@ -256,24 +261,27 @@ export const ProposalDetail: React.FC = () => {
   const handleRequestToContribute = () => {
     if (proposalId === undefined) return;
     requestToContribute(proposalId);
+    setTimeout(() => {
+      refetchAll()
+    }, 1000);
   };
 
   // Handle withdrawal
   const handleWithdraw = () => {
     if (proposalId === undefined) return;
     withdrawContribution(proposalId);
+    setTimeout(() => {
+      refetchAll()
+    }, 1000);
   };
 
   // Handle fund release by creator
   const handleReleaseFunds = () => {
     if (proposalId === undefined) return;
     releaseFunds(proposalId);
-  };
-
-  // Handle proposal approval by admin
-  const handleApproveProposal = () => {
-    if (proposalId === undefined) return;
-    approveProposal(proposalId);
+    setTimeout(() => {
+      refetchAll()
+    }, 1000);
   };
 
   // Handle token swap
@@ -302,6 +310,10 @@ export const ProposalDetail: React.FC = () => {
       setIsSwapDialogOpen(false);
     } catch (error) {
       console.error("Error executing swap:", error);
+    } finally {
+      setTimeout(() => {
+        refetchAll()
+      }, 1000);
     }
   };
 
@@ -451,7 +463,6 @@ export const ProposalDetail: React.FC = () => {
       isCreator &&
       basicData.isApproved &&
       !basicData.isClosed &&
-      isFundingEnded &&
       hasMetTarget;
 
     // Determine if trading is available
@@ -485,7 +496,6 @@ export const ProposalDetail: React.FC = () => {
             canWithdraw={canWithdraw ?? false}
             canTrade={canTrade}
             percentComplete={percentComplete}
-            handleApproveProposal={handleApproveProposal}
             handleRequestToContribute={handleRequestToContribute}
             handleReleaseFunds={handleReleaseFunds}
             handleWithdraw={handleWithdraw}
